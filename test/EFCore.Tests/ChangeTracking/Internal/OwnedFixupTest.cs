@@ -22,6 +22,91 @@ namespace Microsoft.EntityFrameworkCore.ChangeTracking.Internal
 {
     public class OwnedFixupTest
     {
+        private class Thing
+        {
+            public Guid ThingId { get; set; }
+            public List<OwnedByThing> OwnedByThings { get; set; } = new List<OwnedByThing>();
+        }
+
+        private class OwnedByThing
+        {
+            public Guid OwnedByThingId { get; set; }
+            public Guid ThingId { get; set; }
+            public Thing Thing { get; set; }
+        }
+
+        [ConditionalTheory] // Issue #18982
+        [InlineData(false)]
+        [InlineData(true)]
+        public void Detaching_owner_does_not_delete_owned_entities(bool delayCascade)
+        {
+            using var context = new FixupContext();
+
+            var thing = new Thing
+            {
+                ThingId = Guid.NewGuid(),
+                OwnedByThings = new List<OwnedByThing>
+                {
+                    new OwnedByThing
+                    {
+                        OwnedByThingId = Guid.NewGuid()
+                    },
+                    new OwnedByThing
+                    {
+                        OwnedByThingId = Guid.NewGuid()
+                    }
+                }
+            };
+
+            context.Attach(thing);
+
+            Assert.Equal(3, context.ChangeTracker.Entries().Count());
+            Assert.Equal(EntityState.Unchanged, context.Entry(thing).State);
+            Assert.Equal(EntityState.Unchanged, context.Entry(thing.OwnedByThings[0]).State);
+            Assert.Equal(EntityState.Unchanged, context.Entry(thing.OwnedByThings[1]).State);
+
+            if (delayCascade)
+            {
+                context.ChangeTracker.CascadeDeleteTiming = CascadeTiming.OnSaveChanges;
+            }
+
+            context.Entry(thing).State = EntityState.Detached;
+
+            if (delayCascade)
+            {
+                Assert.Equal(2, context.ChangeTracker.Entries().Count());
+                Assert.Equal(EntityState.Detached, context.Entry(thing).State);
+                Assert.Equal(EntityState.Unchanged, context.Entry(thing.OwnedByThings[0]).State);
+                Assert.Equal(EntityState.Unchanged, context.Entry(thing.OwnedByThings[1]).State);
+            }
+            else
+            {
+                Assert.Empty(context.ChangeTracker.Entries());
+                Assert.Equal(EntityState.Detached, context.Entry(thing).State);
+                Assert.Equal(EntityState.Detached, context.Entry(thing.OwnedByThings[0]).State);
+                Assert.Equal(EntityState.Detached, context.Entry(thing.OwnedByThings[1]).State);
+            }
+        }
+
+        [ConditionalFact]
+        public void Can_detach_Added_owner_referencing_detached_weak_owned_entity()
+        {
+            using (var context = new FixupContext())
+            {
+                var owner = new Parent { Child1 = new Child() };
+
+                context.Entry(owner).State = EntityState.Added;
+
+                Assert.Equal(EntityState.Added, context.Entry(owner).State);
+                Assert.Equal(EntityState.Detached, context.Entry(owner).Reference(e => e.Child1).TargetEntry.State);
+
+                context.Entry(owner).State = EntityState.Detached;
+
+                Assert.Equal(EntityState.Detached, context.Entry(owner).State);
+                Assert.Equal(EntityState.Detached, context.Entry(owner).Reference(e => e.Child1).TargetEntry.State);
+            }
+        }
+
         [ConditionalFact]
         public void Can_get_owned_entity_entry()
         {
@@ -3315,73 +3400,64 @@ namespace Microsoft.EntityFrameworkCore.ChangeTracking.Internal
         [InlineData(true)]
         public void Fixup_works_when_changing_state_from_Detached_to_Modified(bool detachDependent)
         {
-            using (var context = new OwnedModifiedContext(Guid.NewGuid().ToString()))
+            using var context = new OwnedModifiedContext(Guid.NewGuid().ToString());
+
+            var details = new ProductDetails { Color = "C1", Size = "S1" };
+            var product = new Product { Name = "Product1", Details = details };
+
+            context.Add(product);
+
+            Assert.True(context.ChangeTracker.HasChanges());
+
+            context.SaveChanges();
+
+            Assert.False(context.ChangeTracker.HasChanges());
+
+            Assert.Equal(2, context.ChangeTracker.Entries().Count());
+            Assert.Equal(EntityState.Unchanged, context.Entry(product).State);
+            Assert.Equal(EntityState.Unchanged, context.Entry(details).State);
+
+            context.Entry(product).State = EntityState.Detached;
+            if (detachDependent)
             {
-                var details = new ProductDetails { Color = "C1", Size = "S1" };
-
-                var product = new Product { Name = "Product1", Details = details };
-
-                context.Add(product);
-                context.SaveChanges();
-
-                Assert.Equal(2, context.ChangeTracker.Entries().Count());
-                Assert.Equal(EntityState.Unchanged, context.Entry(product).State);
-                Assert.Equal(EntityState.Unchanged, context.Entry(details).State);
-
-                context.Entry(product).State = EntityState.Detached;
-                if (detachDependent)
-                {
-                    context.Entry(details).State = EntityState.Detached;
-                }
-
-                if (detachDependent)
-                {
-                    Assert.Empty(context.ChangeTracker.Entries());
-                }
-                else
-                {
-                    Assert.Single(context.ChangeTracker.Entries());
-                    Assert.Equal(EntityState.Deleted, context.Entry(details).State);
-                }
-
-                var newDetails = new ProductDetails { Color = "C2", Size = "S2" };
-
-                var newProduct = new Product { Id = product.Id, Name = "Product1NewName", Details = newDetails };
-
-                context.Update(newProduct);
-
-                if (detachDependent)
-                {
-                    Assert.Equal(2, context.ChangeTracker.Entries().Count());
-                }
-                else
-                {
-                    Assert.Equal(3, context.ChangeTracker.Entries().Count());
-                    Assert.Equal(EntityState.Deleted, context.Entry(details).State);
-                }
-
-                Assert.Equal(EntityState.Modified, context.Entry(newProduct).State);
-                Assert.Equal(EntityState.Modified, context.Entry(newDetails).State);
-
-                Assert.Same(details, product.Details);
-                Assert.Equal("C1", product.Details.Color);
-                Assert.Same(newDetails, newProduct.Details);
-                Assert.Equal("C2", newProduct.Details.Color);
-
-                if (detachDependent)
-                {
-                    context.SaveChanges();
-
-                    Assert.Equal(2, context.ChangeTracker.Entries().Count());
-                    Assert.Equal(EntityState.Unchanged, context.Entry(newProduct).State);
-                    Assert.Equal(EntityState.Unchanged, context.Entry(newDetails).State);
-                }
-                else
-                {
-                    // Because attempting to update an entity after it has been deleted
-                    Assert.Throws<DbUpdateConcurrencyException>(() => context.SaveChanges());
-                }
+                context.Entry(details).State = EntityState.Detached;
             }
+
+            Assert.False(context.ChangeTracker.HasChanges());
+
+            Assert.Empty(context.ChangeTracker.Entries());
+            Assert.Equal(EntityState.Detached, context.Entry(details).State);
+
+            var newDetails = new ProductDetails { Color = "C2", Size = "S2" };
+
+            var newProduct = new Product
+            {
+                Id = product.Id,
+                Name = "Product1NewName",
+                Details = newDetails
+            };
+
+            context.Update(newProduct);
+
+            Assert.True(context.ChangeTracker.HasChanges());
+
+            Assert.Equal(2, context.ChangeTracker.Entries().Count());
+
+            Assert.Equal(EntityState.Modified, context.Entry(newProduct).State);
+            Assert.Equal(EntityState.Modified, context.Entry(newDetails).State);
+
+            Assert.Same(details, product.Details);
+            Assert.Equal("C1", product.Details.Color);
+            Assert.Same(newDetails, newProduct.Details);
+            Assert.Equal("C2", newProduct.Details.Color);
+
+            context.SaveChanges();
+
+            Assert.False(context.ChangeTracker.HasChanges());
+
+            Assert.Equal(2, context.ChangeTracker.Entries().Count());
+            Assert.Equal(EntityState.Unchanged, context.Entry(newProduct).State);
+            Assert.Equal(EntityState.Unchanged, context.Entry(newDetails).State);
         }
 
         private class Product
@@ -3491,7 +3567,12 @@ namespace Microsoft.EntityFrameworkCore.ChangeTracking.Internal
 
             var info = new Info { Title = "MyBook" };
 
-            var book = new Book { BookId = MyBookId, Pages = 99, EnglishInfo = info };
+            var book = new Book
+            {
+                BookId = MyBookId,
+                Pages = 99,
+                EnglishInfo = info
+            };
 
             using (var context = new BooksContext(nameof(BooksContext)))
             {
@@ -3515,7 +3596,12 @@ namespace Microsoft.EntityFrameworkCore.ChangeTracking.Internal
 
                 var newInfo = new Info { Title = "MyBook Rev 2" };
 
-                var newBook = new Book { BookId = MyBookId, Pages = 100, EnglishInfo = newInfo };
+                var newBook = new Book
+                {
+                    BookId = MyBookId,
+                    Pages = 100,
+                    EnglishInfo = newInfo
+                };
 
                 context.Remove(book);
                 context.Add(newBook);
@@ -4260,6 +4346,12 @@ namespace Microsoft.EntityFrameworkCore.ChangeTracking.Internal
                                     });
                             });
                     });
+
+                modelBuilder.Entity<Thing>().OwnsMany(p => p.OwnedByThings, a =>
+                {
+                    a.WithOwner().HasForeignKey(e => e.ThingId);
+                    a.HasKey(e => e.OwnedByThingId);
+                });
             }
 
             protected internal override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)

@@ -12,6 +12,7 @@ using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.EntityFrameworkCore.Utilities;
 
@@ -167,7 +168,7 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Design
                 // ReSharper disable once InlineOutVariableDeclaration
                 var counter = 1;
                 if (builderName.Length > 1
-                    && int.TryParse(builderName[1..], out counter))
+                    && int.TryParse(builderName.Substring(1), out counter))
                 {
                     counter++;
                 }
@@ -440,7 +441,10 @@ namespace Microsoft.EntityFrameworkCore.Migrations.Design
                 .Append(".")
                 .Append(nameof(RelationalPropertyBuilderExtensions.HasColumnType))
                 .Append("(")
-                .Append(Code.Literal(property.GetColumnType()))
+                .Append(
+                    Code.Literal(
+                        property.GetColumnType()
+                            ?? Dependencies.RelationalTypeMappingSource.GetMapping(property).StoreType))
                 .Append(")");
 
             GenerateFluentApiForAnnotation(

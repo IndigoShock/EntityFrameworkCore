@@ -85,10 +85,10 @@ FROM [PolygonEntity] AS [p]");
 //FROM [PolygonEntity] AS [e]");
         }
 
-        [ConditionalTheory(Skip = "No Server Translation.")]
+        // No SqlServer Translation
         public override Task Buffer_quadrantSegments(bool isAsync)
         {
-            return base.Buffer_quadrantSegments(isAsync);
+            return Task.CompletedTask;
         }
 
         public override async Task Centroid(bool isAsync)
@@ -140,16 +140,16 @@ FROM [MultiLineStringEntity] AS [m]");
 FROM [LineStringEntity] AS [l]");
         }
 
-        [ConditionalTheory(Skip = "No Server Translation.")]
+        // No SqlServer Translation
         public override Task CoveredBy(bool isAsync)
         {
             return base.CoveredBy(isAsync);
         }
 
-        [ConditionalTheory(Skip = "No Server Translation.")]
+        // No SqlServer Translation
         public override Task Covers(bool isAsync)
         {
-            return base.Covers(isAsync);
+            return Task.CompletedTask;
         }
 
         public override async Task Crosses(bool isAsync)
@@ -230,14 +230,10 @@ FROM [GeoPointEntity] AS [g]");
 
         public override async Task Distance_constant_srid_4326(bool isAsync)
         {
-            await AssertQuery<PointEntity>(
+            await AssertQuery(
                 isAsync,
-                es => es.Select(
-                    e => new
-                    {
-                        e.Id,
-                        Distance = e.Point == null ? (double?)null : e.Point.Distance(new Point(1, 1) { SRID = 4326 })
-                    }),
+                ss => ss.Set<PointEntity>().Select(
+                    e => new { e.Id, Distance = e.Point == null ? (double?)null : e.Point.Distance(new Point(1, 1) { SRID = 4326 }) }),
                 elementSorter: e => e.Id,
                 elementAsserter: (e, a) =>
                 {
@@ -370,7 +366,7 @@ FROM [PointEntity] AS [p]");
 
             AssertSql(
                 @"SELECT [p].[Id], CASE
-    WHEN [p].[Polygon] IS NULL OR (([p].[Polygon].STNumInteriorRing() = 0) AND [p].[Polygon].STNumInteriorRing() IS NOT NULL) THEN NULL
+    WHEN [p].[Polygon] IS NULL OR ([p].[Polygon].STNumInteriorRing() = 0) THEN NULL
     ELSE [p].[Polygon].STInteriorRingN(0 + 1)
 END AS [InteriorRing0]
 FROM [PolygonEntity] AS [p]");
@@ -596,7 +592,7 @@ FROM [PolygonEntity] AS [p]");
 //FROM [PolygonEntity] AS [e]");
         }
 
-        [ConditionalTheory(Skip = "No Server Translation.")]
+        // No SqlServer Translation
         public override Task Reverse(bool isAsync)
         {
             return base.Reverse(isAsync);
@@ -685,10 +681,10 @@ FROM [LineStringEntity] AS [l]");
 //FROM [PolygonEntity] AS [e]");
         }
 
-        [ConditionalTheory(Skip = "No Server Translation.")]
+        // No SqlServer Translation
         public override Task Union_void(bool isAsync)
         {
-            return base.Union_void(isAsync);
+            return Task.CompletedTask;
         }
 
         public override async Task Within(bool isAsync)

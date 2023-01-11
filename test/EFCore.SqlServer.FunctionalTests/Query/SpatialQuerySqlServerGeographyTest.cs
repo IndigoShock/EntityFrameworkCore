@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System.Threading.Tasks;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Microsoft.EntityFrameworkCore.Query
@@ -67,10 +66,10 @@ FROM [PolygonEntity] AS [p]");
             //FROM [PointEntity] AS [e]");
         }
 
-        [ConditionalTheory(Skip = "No Server Translation.")]
+        // No SqlServer Translation
         public override Task Boundary(bool isAsync)
         {
-            return base.Boundary(isAsync);
+            return Task.CompletedTask;
         }
 
         public override async Task Buffer(bool isAsync)
@@ -83,16 +82,16 @@ FROM [PolygonEntity] AS [p]");
             //FROM [PolygonEntity] AS [e]");
         }
 
-        [ConditionalTheory(Skip = "No Server Translation.")]
+        // No SqlServer Translation
         public override Task Buffer_quadrantSegments(bool isAsync)
         {
-            return base.Buffer_quadrantSegments(isAsync);
+            return Task.CompletedTask;
         }
 
-        [ConditionalTheory(Skip = "No Server Translation.")]
+        // No SqlServer Translation
         public override Task Centroid(bool isAsync)
         {
-            return base.Centroid(isAsync);
+            return Task.CompletedTask;
         }
 
         public override async Task Contains(bool isAsync)
@@ -135,22 +134,22 @@ FROM [MultiLineStringEntity] AS [m]");
 FROM [LineStringEntity] AS [l]");
         }
 
-        [ConditionalTheory(Skip = "No Server Translation.")]
+        // No SqlServer Translation
         public override Task CoveredBy(bool isAsync)
         {
-            return base.CoveredBy(isAsync);
+            return Task.CompletedTask;
         }
 
-        [ConditionalTheory(Skip = "No Server Translation.")]
+        // No SqlServer Translation
         public override Task Covers(bool isAsync)
         {
-            return base.Covers(isAsync);
+            return Task.CompletedTask;
         }
 
-        [ConditionalTheory(Skip = "No Server Translation.")]
+        // No SqlServer Translation
         public override Task Crosses(bool isAsync)
         {
-            return base.Crosses(isAsync);
+            return Task.CompletedTask;
         }
 
         public override async Task Difference(bool isAsync)
@@ -210,10 +209,10 @@ FROM [PointEntity] AS [p]");
             //FROM [PointEntity] AS [e]");
         }
 
-        [ConditionalTheory(Skip = "Mixing SRIDs not supported")]
+        // Mixing SRIDs not supported
         public override Task Distance_constant(bool isAsync)
         {
-            return base.Distance_constant(isAsync);
+            return Task.CompletedTask;
         }
 
         public override async Task Distance_constant_srid_4326(bool isAsync)
@@ -226,10 +225,10 @@ FROM [PointEntity] AS [p]");
             //FROM [PointEntity] AS [e]");
         }
 
-        [ConditionalTheory(Skip = "Mixing SRIDs not supported")]
+        // Mixing SRIDs not supported
         public override Task Distance_constant_lhs(bool isAsync)
         {
-            return base.Distance_constant_lhs(isAsync);
+            return Task.CompletedTask;
         }
 
         public override async Task Distance_on_converted_geometry_type(bool isAsync)
@@ -254,16 +253,16 @@ SELECT [g].[Id], @__point_0.STDistance([g].[Location]) AS [Distance]
 FROM [GeoPointEntity] AS [g]");
         }
 
-        [ConditionalTheory(Skip = "Mixing SRIDs not supported")]
+        // Mixing SRIDs not supported
         public override Task Distance_on_converted_geometry_type_constant(bool isAsync)
         {
-            return base.Distance_on_converted_geometry_type_constant(isAsync);
+            return Task.CompletedTask;
         }
 
-        [ConditionalTheory(Skip = "Mixing SRIDs not supported")]
+        // Mixing SRIDs not supported
         public override Task Distance_on_converted_geometry_type_constant_lhs(bool isAsync)
         {
-            return base.Distance_on_converted_geometry_type_constant_lhs(isAsync);
+            return Task.CompletedTask;
         }
 
         public override async Task EndPoint(bool isAsync)
@@ -275,10 +274,10 @@ FROM [GeoPointEntity] AS [g]");
 FROM [LineStringEntity] AS [l]");
         }
 
-        [ConditionalTheory(Skip = "No Server Translation.")]
+        // No SqlServer Translation
         public override Task Envelope(bool isAsync)
         {
-            return base.Envelope(isAsync);
+            return Task.CompletedTask;
         }
 
         public override async Task EqualsTopologically(bool isAsync)
@@ -327,7 +326,7 @@ FROM [PointEntity] AS [p]");
 
             AssertSql(
                 @"SELECT [p].[Id], CASE
-    WHEN [p].[Polygon] IS NULL OR ((([p].[Polygon].NumRings() - 1) = 0) AND [p].[Polygon].NumRings() - 1 IS NOT NULL) THEN NULL
+    WHEN [p].[Polygon] IS NULL OR (([p].[Polygon].NumRings() - 1) = 0) THEN NULL
     ELSE [p].[Polygon].RingN(0 + 2)
 END AS [InteriorRing0]
 FROM [PolygonEntity] AS [p]");
@@ -343,10 +342,10 @@ FROM [PolygonEntity] AS [p]");
             //FROM [LineStringEntity] AS [e]");
         }
 
-        [ConditionalTheory(Skip = "No Server Translation.")]
+        // No SqlServer Translation
         public override Task InteriorPoint(bool isAsync)
         {
-            return base.InteriorPoint(isAsync);
+            return Task.CompletedTask;
         }
 
         public override async Task Intersection(bool isAsync)
@@ -400,16 +399,16 @@ FROM [MultiLineStringEntity] AS [m]");
 FROM [MultiLineStringEntity] AS [m]");
         }
 
-        [ConditionalTheory(Skip = "No Server Translation.")]
+        // No SqlServer Translation
         public override Task IsRing(bool isAsync)
         {
-            return base.IsRing(isAsync);
+            return Task.CompletedTask;
         }
 
-        [ConditionalTheory(Skip = "No Server Translation.")]
+        // No SqlServer Translation
         public override Task IsSimple(bool isAsync)
         {
-            return base.IsSimple(isAsync);
+            return Task.CompletedTask;
         }
 
         public override async Task IsValid(bool isAsync)
@@ -526,22 +525,22 @@ FROM [PointEntity] AS [p]");
             //FROM [PolygonEntity] AS [e]");
         }
 
-        [ConditionalTheory(Skip = "No Server Translation.")]
+        // No SqlServer Translation
         public override Task PointOnSurface(bool isAsync)
         {
-            return base.PointOnSurface(isAsync);
+            return Task.CompletedTask;
         }
 
-        [ConditionalTheory(Skip = "No Server Translation.")]
+        // No SqlServer Translation
         public override Task Relate(bool isAsync)
         {
-            return base.Relate(isAsync);
+            return Task.CompletedTask;
         }
 
-        [ConditionalTheory(Skip = "No Server Translation.")]
+        // No SqlServer Translation
         public override Task Reverse(bool isAsync)
         {
-            return base.Reverse(isAsync);
+            return Task.CompletedTask;
         }
 
         public override async Task SRID(bool isAsync)
@@ -603,10 +602,10 @@ FROM [LineStringEntity] AS [l]");
             //FROM [PointEntity] AS [e]");
         }
 
-        [ConditionalTheory(Skip = "No Server Translation.")]
+        // No SqlServer Translation
         public override Task Touches(bool isAsync)
         {
-            return base.Touches(isAsync);
+            return Task.CompletedTask;
         }
 
         public override async Task Union(bool isAsync)
@@ -621,10 +620,10 @@ FROM [LineStringEntity] AS [l]");
             //FROM [PolygonEntity] AS [e]");
         }
 
-        [ConditionalTheory(Skip = "No Server Translation.")]
+        // No SqlServer Translation
         public override Task Union_void(bool isAsync)
         {
-            return base.Union_void(isAsync);
+            return Task.CompletedTask;
         }
 
         public override async Task Within(bool isAsync)

@@ -723,9 +723,9 @@ namespace Microsoft.EntityFrameworkCore.Storage
 
         private bool ShouldClose()
             => (_openedCount == 0
-                || _openedCount > 0
-                && --_openedCount == 0)
-               && _openedInternally;
+                    || _openedCount > 0
+                    && --_openedCount == 0)
+                && _openedInternally;
 
         /// <summary>
         ///     Gets a value indicating whether the multiple active result sets feature is enabled.
@@ -778,7 +778,7 @@ namespace Microsoft.EntityFrameworkCore.Storage
             if (_connectionOwned
                 && _connection != null)
             {
-                await DbConnection.DisposeAsync();
+                await DbConnection.DisposeAsyncIfAvailable();
                 _connection = null;
                 _openedCount = 0;
             }

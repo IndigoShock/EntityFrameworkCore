@@ -596,12 +596,12 @@ namespace Microsoft.EntityFrameworkCore.Metadata.Internal
                 var end = value.IndexOf('\'', position);
 
                 while (end + 1 < value.Length
-                       && value[end + 1] == '\'')
+                    && value[end + 1] == '\'')
                 {
                     end = value.IndexOf('\'', end + 2);
                 }
 
-                var extracted = value[position..end].Replace("''", "'");
+                var extracted = value.Substring(position, end - position).Replace("''", "'");
                 position = end + 1;
 
                 return extracted.Length == 0 ? null : extracted;

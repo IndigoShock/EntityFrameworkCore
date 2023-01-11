@@ -3,7 +3,6 @@
 
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.TestUtilities;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Microsoft.EntityFrameworkCore.Query
@@ -71,7 +70,13 @@ FROM [Customers] AS [c]");
 
 SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
 FROM [Customers] AS [c]
-WHERE ([c].[CustomerID] = @__customerID) AND @__customerID IS NOT NULL");
+WHERE [c].[CustomerID] = @__customerID",
+                //
+                @"@__customerID='ANATR' (Size = 5)
+
+SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
+FROM [Customers] AS [c]
+WHERE [c].[CustomerID] = @__customerID");
         }
 
         public override void First_query_with_single_parameter()
@@ -83,7 +88,13 @@ WHERE ([c].[CustomerID] = @__customerID) AND @__customerID IS NOT NULL");
 
 SELECT TOP(1) [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
 FROM [Customers] AS [c]
-WHERE ([c].[CustomerID] = @__customerID) AND @__customerID IS NOT NULL");
+WHERE [c].[CustomerID] = @__customerID",
+                //
+                @"@__customerID='ANATR' (Size = 5)
+
+SELECT TOP(1) [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
+FROM [Customers] AS [c]
+WHERE [c].[CustomerID] = @__customerID");
         }
 
         public override void Query_with_two_parameters()
@@ -95,7 +106,13 @@ WHERE ([c].[CustomerID] = @__customerID) AND @__customerID IS NOT NULL");
 
 SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
 FROM [Customers] AS [c]
-WHERE ([c].[CustomerID] = @__customerID) AND @__customerID IS NOT NULL");
+WHERE [c].[CustomerID] = @__customerID",
+                //
+                @"@__customerID='ANATR' (Size = 5)
+
+SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
+FROM [Customers] AS [c]
+WHERE [c].[CustomerID] = @__customerID");
         }
 
         public override void Query_with_three_parameters()
@@ -107,7 +124,13 @@ WHERE ([c].[CustomerID] = @__customerID) AND @__customerID IS NOT NULL");
 
 SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
 FROM [Customers] AS [c]
-WHERE ([c].[CustomerID] = @__customerID) AND @__customerID IS NOT NULL");
+WHERE [c].[CustomerID] = @__customerID",
+                //
+                @"@__customerID='ANATR' (Size = 5)
+
+SELECT [c].[CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region]
+FROM [Customers] AS [c]
+WHERE [c].[CustomerID] = @__customerID");
         }
 
         public override void Query_with_contains()
@@ -138,7 +161,6 @@ FROM [Customers] AS [c]
 WHERE [c].[CustomerID] = N'ALFKI'");
         }
 
-        [ConditionalFact]
         public override async Task DbQuery_query_async()
         {
             await base.DbQuery_query_async();
@@ -149,7 +171,6 @@ WHERE [c].[CustomerID] = N'ALFKI'");
                 @"SELECT [c].[CustomerID] + N'' as [CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region] FROM [Customers] AS [c]");
         }
 
-        [ConditionalFact]
         public override void DbQuery_query_first()
         {
             base.DbQuery_query_first();
@@ -162,7 +183,6 @@ FROM (
 ORDER BY [c].[CompanyName]");
         }
 
-        [ConditionalFact]
         public override async Task DbQuery_query_first_async()
         {
             await base.DbQuery_query_first_async();
@@ -175,7 +195,6 @@ FROM (
 ORDER BY [c].[CompanyName]");
         }
 
-        [ConditionalFact]
         public override void DbQuery_query()
         {
             base.DbQuery_query();
@@ -184,6 +203,18 @@ ORDER BY [c].[CompanyName]");
                 @"SELECT [c].[CustomerID] + N'' as [CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region] FROM [Customers] AS [c]",
                 //
                 @"SELECT [c].[CustomerID] + N'' as [CustomerID], [c].[Address], [c].[City], [c].[CompanyName], [c].[ContactName], [c].[ContactTitle], [c].[Country], [c].[Fax], [c].[Phone], [c].[PostalCode], [c].[Region] FROM [Customers] AS [c]");
+        }
+
+        public override void Compiled_query_when_does_not_end_in_query_operator()
+        {
+            base.Compiled_query_when_does_not_end_in_query_operator();
+
+            AssertSql(
+                @"@__customerID='ALFKI' (Size = 5)
+
+SELECT COUNT(*)
+FROM [Customers] AS [c]
+WHERE [c].[CustomerID] = @__customerID");
         }
 
         private void AssertSql(params string[] expected)

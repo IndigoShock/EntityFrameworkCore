@@ -26,6 +26,10 @@ namespace Microsoft.EntityFrameworkCore.Scaffolding.Internal
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
+// Code scaffolded by EF Core assumes nullable reference types (NRTs) are not used or disabled.
+// If you have enabled NRTs for your project, then un-comment the following line:
+// #nullable disable
+
 namespace TestNamespace
 {
     public partial class TestDbContext : DbContext
@@ -43,7 +47,9 @@ namespace TestNamespace
         {
             if (!optionsBuilder.IsConfigured)
             {
-#warning " + DesignStrings.SensitiveInformationWarning + @"
+#warning "
+                        + DesignStrings.SensitiveInformationWarning
+                        + @"
                 optionsBuilder.UseSqlServer(""Initial Catalog=TestDatabase"");
             }
         }
@@ -77,6 +83,10 @@ namespace TestNamespace
                         @"using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
+
+// Code scaffolded by EF Core assumes nullable reference types (NRTs) are not used or disabled.
+// If you have enabled NRTs for your project, then un-comment the following line:
+// #nullable disable
 
 namespace TestNamespace
 {
@@ -192,6 +202,74 @@ namespace TestNamespace
                 code => Assert.Contains(".ToView(\"Vista\")", code.ContextFile.Code),
                 model => Assert.NotNull(
                     model.FindEntityType("TestNamespace.Vista").FindAnnotation(RelationalAnnotationNames.ViewDefinition)));
+        }
+
+        [ConditionalFact]
+        public void ModelInDiferentNamespaceDbContext_works()
+        {
+            var modelGenerationOptions = new ModelCodeGenerationOptions
+            {
+                ContextNamespace = "TestNamespace", ModelNamespace = "AnotherNamespaceOfModel"
+            };
+
+            const string entityInAnoterNamespaceTypeName = "EntityInAnotherNamespace";
+
+            Test(
+                modelBuilder => modelBuilder.Entity(entityInAnoterNamespaceTypeName)
+                , modelGenerationOptions
+                , code => Assert.Contains(string.Concat("using ", modelGenerationOptions.ModelNamespace, ";"), code.ContextFile.Code)
+                , model => Assert.NotNull(model.FindEntityType(string.Concat(modelGenerationOptions.ModelNamespace, ".", entityInAnoterNamespaceTypeName)))
+            );
+        }
+
+        [ConditionalFact]
+        public void ModelSameNamespaceDbContext_works()
+        {
+            var modelGenerationOptions = new ModelCodeGenerationOptions { ContextNamespace = "TestNamespace" };
+
+            const string entityInAnoterNamespaceTypeName = "EntityInAnotherNamespace";
+
+            Test(
+                modelBuilder => modelBuilder.Entity(entityInAnoterNamespaceTypeName)
+                , modelGenerationOptions
+                , code => Assert.DoesNotContain(string.Concat("using ", modelGenerationOptions.ModelNamespace, ";"), code.ContextFile.Code)
+                , model => Assert.NotNull(model.FindEntityType(string.Concat(modelGenerationOptions.ModelNamespace, ".", entityInAnoterNamespaceTypeName)))
+            );
+        }
+
+        [ConditionalFact]
+        public void ValueGenerated_works()
+        {
+            Test(
+                modelBuilder => modelBuilder.Entity(
+                    "Entity",
+                    x =>
+                    {
+                        x.Property<int>("ValueGeneratedOnAdd").ValueGeneratedOnAdd();
+                        x.Property<int>("ValueGeneratedOnAddOrUpdate").ValueGeneratedOnAddOrUpdate();
+                        x.Property<int>("ConcurrencyToken").IsConcurrencyToken();
+                        x.Property<int>("ValueGeneratedOnUpdate").ValueGeneratedOnUpdate();
+                        x.Property<int>("ValueGeneratedNever").ValueGeneratedNever();
+                    }),
+                new ModelCodeGenerationOptions(),
+                code =>
+                {
+                    Assert.Contains(@"Property(e => e.ValueGeneratedOnAdd)
+                    .ValueGeneratedOnAdd()", code.ContextFile.Code);
+                    Assert.Contains("Property(e => e.ValueGeneratedOnAddOrUpdate).ValueGeneratedOnAddOrUpdate()", code.ContextFile.Code);
+                    Assert.Contains("Property(e => e.ConcurrencyToken).IsConcurrencyToken()", code.ContextFile.Code);
+                    Assert.Contains("Property(e => e.ValueGeneratedOnUpdate).ValueGeneratedOnUpdate()", code.ContextFile.Code);
+                    Assert.Contains("Property(e => e.ValueGeneratedNever).ValueGeneratedNever()", code.ContextFile.Code);
+                },
+                model =>
+                {
+                    var entity = model.FindEntityType("TestNamespace.Entity");
+                    Assert.Equal(ValueGenerated.OnAdd, entity.GetProperty("ValueGeneratedOnAdd").ValueGenerated);
+                    Assert.Equal(ValueGenerated.OnAddOrUpdate, entity.GetProperty("ValueGeneratedOnAddOrUpdate").ValueGenerated);
+                    Assert.True(entity.GetProperty("ConcurrencyToken").IsConcurrencyToken);
+                    Assert.Equal(ValueGenerated.OnUpdate, entity.GetProperty("ValueGeneratedOnUpdate").ValueGenerated);
+                    Assert.Equal(ValueGenerated.Never, entity.GetProperty("ValueGeneratedNever").ValueGenerated);
+                });
         }
 
         private class TestCodeGeneratorPlugin : ProviderCodeGeneratorPlugin

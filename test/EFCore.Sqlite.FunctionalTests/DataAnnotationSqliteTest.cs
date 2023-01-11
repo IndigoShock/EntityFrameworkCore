@@ -100,16 +100,14 @@ namespace Microsoft.EntityFrameworkCore
                 @"SELECT ""s"".""UniqueNo"", ""s"".""MaxLengthProperty"", ""s"".""Name"", ""s"".""RowVersion"", ""t"".""UniqueNo"", ""t"".""AdditionalDetails_Name"", ""t0"".""UniqueNo"", ""t0"".""Details_Name""
 FROM ""Sample"" AS ""s""
 LEFT JOIN (
-    SELECT ""s0"".""UniqueNo"", ""s0"".""AdditionalDetails_Name"", ""s1"".""UniqueNo"" AS ""UniqueNo0""
+    SELECT ""s0"".""UniqueNo"", ""s0"".""AdditionalDetails_Name""
     FROM ""Sample"" AS ""s0""
-    INNER JOIN ""Sample"" AS ""s1"" ON ""s0"".""UniqueNo"" = ""s1"".""UniqueNo""
     WHERE ""s0"".""AdditionalDetails_Name"" IS NOT NULL
 ) AS ""t"" ON ""s"".""UniqueNo"" = ""t"".""UniqueNo""
 LEFT JOIN (
-    SELECT ""s2"".""UniqueNo"", ""s2"".""Details_Name"", ""s3"".""UniqueNo"" AS ""UniqueNo0""
-    FROM ""Sample"" AS ""s2""
-    INNER JOIN ""Sample"" AS ""s3"" ON ""s2"".""UniqueNo"" = ""s3"".""UniqueNo""
-    WHERE ""s2"".""Details_Name"" IS NOT NULL
+    SELECT ""s1"".""UniqueNo"", ""s1"".""Details_Name""
+    FROM ""Sample"" AS ""s1""
+    WHERE ""s1"".""Details_Name"" IS NOT NULL
 ) AS ""t0"" ON ""s"".""UniqueNo"" = ""t0"".""UniqueNo""
 WHERE ""s"".""UniqueNo"" = 1
 LIMIT 1",
@@ -117,16 +115,14 @@ LIMIT 1",
                 @"SELECT ""s"".""UniqueNo"", ""s"".""MaxLengthProperty"", ""s"".""Name"", ""s"".""RowVersion"", ""t"".""UniqueNo"", ""t"".""AdditionalDetails_Name"", ""t0"".""UniqueNo"", ""t0"".""Details_Name""
 FROM ""Sample"" AS ""s""
 LEFT JOIN (
-    SELECT ""s0"".""UniqueNo"", ""s0"".""AdditionalDetails_Name"", ""s1"".""UniqueNo"" AS ""UniqueNo0""
+    SELECT ""s0"".""UniqueNo"", ""s0"".""AdditionalDetails_Name""
     FROM ""Sample"" AS ""s0""
-    INNER JOIN ""Sample"" AS ""s1"" ON ""s0"".""UniqueNo"" = ""s1"".""UniqueNo""
     WHERE ""s0"".""AdditionalDetails_Name"" IS NOT NULL
 ) AS ""t"" ON ""s"".""UniqueNo"" = ""t"".""UniqueNo""
 LEFT JOIN (
-    SELECT ""s2"".""UniqueNo"", ""s2"".""Details_Name"", ""s3"".""UniqueNo"" AS ""UniqueNo0""
-    FROM ""Sample"" AS ""s2""
-    INNER JOIN ""Sample"" AS ""s3"" ON ""s2"".""UniqueNo"" = ""s3"".""UniqueNo""
-    WHERE ""s2"".""Details_Name"" IS NOT NULL
+    SELECT ""s1"".""UniqueNo"", ""s1"".""Details_Name""
+    FROM ""Sample"" AS ""s1""
+    WHERE ""s1"".""Details_Name"" IS NOT NULL
 ) AS ""t0"" ON ""s"".""UniqueNo"" = ""t0"".""UniqueNo""
 WHERE ""s"".""UniqueNo"" = 1
 LIMIT 1",
@@ -155,7 +151,7 @@ SELECT changes();");
             base.DatabaseGeneratedAttribute_autogenerates_values_when_set_to_identity();
 
             AssertSql(
-                @"@p0=''
+                @"@p0=NULL
 @p1='Third' (Nullable = false) (Size = 5)
 @p2='00000000-0000-0000-0000-000000000003' (DbType = String)
 @p3='Third Additional Name' (Size = 21)
@@ -182,7 +178,7 @@ WHERE changes() = 1 AND ""rowid"" = last_insert_rowid();");
             base.RequiredAttribute_for_navigation_throws_while_inserting_null_value();
 
             AssertSql(
-                @"@p0=''
+                @"@p0=NULL
 @p1='1' (DbType = String)
 
 INSERT INTO ""BookDetails"" (""AdditionalBookDetailsId"", ""AnotherBookId"")
@@ -191,8 +187,8 @@ SELECT ""Id""
 FROM ""BookDetails""
 WHERE changes() = 1 AND ""rowid"" = last_insert_rowid();",
                 //
-                @"@p0=''
-@p1='' (Nullable = false)
+                @"@p0=NULL
+@p1=NULL (Nullable = false)
 
 INSERT INTO ""BookDetails"" (""AdditionalBookDetailsId"", ""AnotherBookId"")
 VALUES (@p0, @p1);
@@ -206,7 +202,7 @@ WHERE changes() = 1 AND ""rowid"" = last_insert_rowid();");
             base.RequiredAttribute_for_property_throws_while_inserting_null_value();
 
             AssertSql(
-                @"@p0=''
+                @"@p0=NULL
 @p1='ValidString' (Nullable = false) (Size = 11)
 @p2='00000000-0000-0000-0000-000000000001' (DbType = String)
 @p3='Two' (Size = 3)
@@ -218,8 +214,8 @@ SELECT ""UniqueNo""
 FROM ""Sample""
 WHERE changes() = 1 AND ""rowid"" = last_insert_rowid();",
                 //
-                @"@p0=''
-@p1='' (Nullable = false)
+                @"@p0=NULL
+@p1=NULL (Nullable = false)
 @p2='00000000-0000-0000-0000-000000000002' (DbType = String)
 @p3='Two' (Size = 3)
 @p4='One' (Size = 3)

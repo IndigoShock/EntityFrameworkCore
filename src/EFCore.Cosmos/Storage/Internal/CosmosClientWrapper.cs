@@ -180,10 +180,17 @@ namespace Microsoft.EntityFrameworkCore.Cosmos.Storage.Internal
             object __,
             CancellationToken cancellationToken = default)
         {
-            var response = await Client.GetDatabase(_databaseId).DeleteStreamAsync(cancellationToken: cancellationToken)
-                .ConfigureAwait(false);
+            using (var response = await Client.GetDatabase(_databaseId).DeleteStreamAsync(cancellationToken: cancellationToken)
+                .ConfigureAwait(false))
+            {
+                if (response.StatusCode == HttpStatusCode.NotFound)
+                {
+                    return false;
+                }
 
-            return response.StatusCode == HttpStatusCode.NoContent;
+                response.EnsureSuccessStatusCode();
+                return response.StatusCode == HttpStatusCode.NoContent;
+            }
         }
 
         /// <summary>
@@ -221,14 +228,22 @@ namespace Microsoft.EntityFrameworkCore.Cosmos.Storage.Internal
             (string ContainerId, string PartitionKey) parameters,
             CancellationToken cancellationToken = default)
         {
-            var response = await Client.GetDatabase(_databaseId).CreateContainerIfNotExistsAsync(
+            using (var response = await Client.GetDatabase(_databaseId).CreateContainerStreamAsync(
                     new ContainerProperties(parameters.ContainerId, "/" + parameters.PartitionKey)
                     {
                         PartitionKeyDefinitionVersion = PartitionKeyDefinitionVersion.V2
-                    }, cancellationToken: cancellationToken)
-                .ConfigureAwait(false);
+                    },
+                    cancellationToken: cancellationToken)
+                .ConfigureAwait(false))
+            {
+                if (response.StatusCode == HttpStatusCode.Conflict)
+                {
+                    return false;
+                }
 
-            return response.StatusCode == HttpStatusCode.Created;
+                response.EnsureSuccessStatusCode();
+                return response.StatusCode == HttpStatusCode.Created;
+            }
         }
 
         /// <summary>
@@ -268,19 +283,34 @@ namespace Microsoft.EntityFrameworkCore.Cosmos.Storage.Internal
             (string ContainerId, JToken Document, string PartitionKey) parameters,
             CancellationToken cancellationToken = default)
         {
-            await using (var stream = new MemoryStream())
-            await using (var writer = new StreamWriter(stream, new UTF8Encoding(), bufferSize: 1024, leaveOpen: false))
-            using (var jsonWriter = new JsonTextWriter(writer))
+            var stream = new MemoryStream();
+            try
             {
-                JsonSerializer.Create().Serialize(jsonWriter, parameters.Document);
-                await jsonWriter.FlushAsync(cancellationToken);
-
-                var container = Client.GetDatabase(_databaseId).GetContainer(parameters.ContainerId);
-                var partitionKey = CreatePartitionKey(parameters.PartitionKey);
-                using (var response = await container.CreateItemStreamAsync(stream, partitionKey, null, cancellationToken))
+                var writer = new StreamWriter(stream, new UTF8Encoding(), bufferSize: 1024, leaveOpen: false);
+                try
                 {
-                    return response.StatusCode == HttpStatusCode.Created;
+                    using (var jsonWriter = new JsonTextWriter(writer))
+                    {
+                        JsonSerializer.Create().Serialize(jsonWriter, parameters.Document);
+                        await jsonWriter.FlushAsync(cancellationToken);
+
+                        var container = Client.GetDatabase(_databaseId).GetContainer(parameters.ContainerId);
+                        var partitionKey = CreatePartitionKey(parameters.PartitionKey);
+                        using (var response = await container.CreateItemStreamAsync(stream, partitionKey, null, cancellationToken))
+                        {
+                            response.EnsureSuccessStatusCode();
+                            return response.StatusCode == HttpStatusCode.Created;
+                        }
+                    }
                 }
+                finally
+                {
+                    await writer.DisposeAsyncIfAvailable();
+                }
+            }
+            finally
+            {
+                await stream.DisposeAsyncIfAvailable();
             }
         }
 
@@ -335,6 +365,7 @@ namespace Microsoft.EntityFrameworkCore.Cosmos.Storage.Internal
                 using (var response = await container.ReplaceItemStreamAsync(
                     stream, parameters.ItemId, partitionKey, null, cancellationToken))
                 {
+                    response.EnsureSuccessStatusCode();
                     return response.StatusCode == HttpStatusCode.OK;
                 }
             }
@@ -394,6 +425,7 @@ namespace Microsoft.EntityFrameworkCore.Cosmos.Storage.Internal
             using (var response = await items.DeleteItemStreamAsync(
                 parameters.DocumentId, partitionKey, cancellationToken: cancellationToken))
             {
+                response.EnsureSuccessStatusCode();
                 return response.StatusCode == HttpStatusCode.NoContent;
             }
         }
@@ -470,6 +502,7 @@ namespace Microsoft.EntityFrameworkCore.Cosmos.Storage.Internal
             private class Enumerator : IEnumerator<JObject>
             {
                 private FeedIterator _query;
+                private ResponseMessage _responseMessage;
                 private Stream _responseStream;
                 private StreamReader _reader;
                 private JsonTextReader _jsonReader;
@@ -504,7 +537,10 @@ namespace Microsoft.EntityFrameworkCore.Cosmos.Storage.Internal
                             return false;
                         }
 
-                        _responseStream = _query.ReadNextAsync().GetAwaiter().GetResult().Content;
+                        _responseMessage = _query.ReadNextAsync().GetAwaiter().GetResult();
+                        _responseMessage.EnsureSuccessStatusCode();
+
+                        _responseStream = _responseMessage.Content;
                         _reader = new StreamReader(_responseStream);
                         _jsonReader = new JsonTextReader(_reader);
 
@@ -553,6 +589,8 @@ namespace Microsoft.EntityFrameworkCore.Cosmos.Storage.Internal
                     _reader = null;
                     _responseStream?.Dispose();
                     _responseStream = null;
+                    _responseMessage?.Dispose();
+                    _responseMessage = null;
                 }
 
                 public void Reset() => throw new NotImplementedException();
@@ -619,6 +657,8 @@ namespace Microsoft.EntityFrameworkCore.Cosmos.Storage.Internal
                         }
 
                         _responseMessage = await _query.ReadNextAsync(_cancellationToken);
+                        _responseMessage.EnsureSuccessStatusCode();
+
                         _responseStream = _responseMessage.Content;
                         _reader = new StreamReader(_responseStream);
                         _jsonReader = new JsonTextReader(_reader);
@@ -660,7 +700,7 @@ namespace Microsoft.EntityFrameworkCore.Cosmos.Storage.Internal
                     _jsonReader = null;
                     await _reader.DisposeAsyncIfAvailable();
                     _reader = null;
-                    await _responseStream.DisposeAsync();
+                    await _responseStream.DisposeAsyncIfAvailable();
                     _responseStream = null;
                     await _responseMessage.DisposeAsyncIfAvailable();
                     _responseMessage = null;

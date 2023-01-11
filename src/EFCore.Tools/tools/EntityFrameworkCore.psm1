@@ -172,7 +172,7 @@ function Get-DbContext
     $dteProject = GetProject $Project
     $dteStartupProject = GetStartupProject $StartupProject $dteProject
 
-    if ($Context)
+    if ($PSBoundParameters.ContainsKey('Context'))
     {
        $params = 'dbcontext', 'info', '--json'
        $params += GetParams $Context
@@ -846,6 +846,10 @@ function EF($project, $startupProject, $params, [switch] $skipBuild)
         if ($platformTarget -eq 'x86')
         {
             $exePath = Join-Path $PSScriptRoot 'net461\win-x86\ef.exe'
+        }
+        elseif ($platformTarget -eq 'ARM64')
+        {
+            $exePath = Join-Path $PSScriptRoot 'net461\win-arm64\ef.exe'
         }
         elseif ($platformTarget -in 'AnyCPU', 'x64')
         {

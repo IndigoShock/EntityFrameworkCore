@@ -2206,6 +2206,30 @@ namespace Microsoft.EntityFrameworkCore.Diagnostics
                 GetString("ClashingNonOwnedDerivedEntityType", nameof(entityType), nameof(derivedType)),
                 entityType, derivedType);
 
+        /// <summary>
+        ///     Client projection contains reference to constant expression of '{constantType}' which is being passed as argument to method '{methodName}'. This could potentially cause memory leak. Consider assigning this constant to local variable and using the variable in the query instead. See https://go.microsoft.com/fwlink/?linkid=2103067 for more information.
+        /// </summary>
+        public static string ClientProjectionCapturingConstantInMethodArgument([CanBeNull] object constantType, [CanBeNull] object methodName)
+            => string.Format(
+                GetString("ClientProjectionCapturingConstantInMethodArgument", nameof(constantType), nameof(methodName)),
+                constantType, methodName);
+
+        /// <summary>
+        ///     Client projection contains reference to constant expression of '{constantType}' through instance method '{methodName}'. This could potentially cause memory leak. Consider making the method static so that it does not capture constant in the instance. See https://go.microsoft.com/fwlink/?linkid=2103067 for more information.
+        /// </summary>
+        public static string ClientProjectionCapturingConstantInMethodInstance([CanBeNull] object constantType, [CanBeNull] object methodName)
+            => string.Format(
+                GetString("ClientProjectionCapturingConstantInMethodInstance", nameof(constantType), nameof(methodName)),
+                constantType, methodName);
+
+        /// <summary>
+        ///     Client projection contains reference to constant expression of '{constantType}'. This could potentially cause memory leak. Consider assigning this constant to local variable and using the variable in the query instead. See https://go.microsoft.com/fwlink/?linkid=2103067 for more information.
+        /// </summary>
+        public static string ClientProjectionCapturingConstantInTree([CanBeNull] object constantType)
+            => string.Format(
+                GetString("ClientProjectionCapturingConstantInTree", nameof(constantType)),
+                constantType);
+
         private static string GetString(string name, params string[] formatterNames)
         {
             var value = _resourceManager.GetString(name);
@@ -3271,6 +3295,30 @@ namespace Microsoft.EntityFrameworkCore.Diagnostics.Internal
         }
 
         /// <summary>
+        ///     The property '{property}' on entity type '{entityType}' is a collection or enumeration type with a value converter but with no value comparer. Set a value comparer to ensure the collection/enumeration elements are compared correctly.
+        /// </summary>
+        public static EventDefinition<string, string> LogCollectionWithoutComparer([NotNull] IDiagnosticsLogger logger)
+        {
+            var definition = ((LoggingDefinitions)logger.Definitions).LogCollectionWithoutComparer;
+            if (definition == null)
+            {
+                definition = LazyInitializer.EnsureInitialized<EventDefinitionBase>(
+                    ref ((LoggingDefinitions)logger.Definitions).LogCollectionWithoutComparer,
+                    () => new EventDefinition<string, string>(
+                        logger.Options,
+                        CoreEventId.CollectionWithoutComparer,
+                        LogLevel.Warning,
+                        "CoreEventId.CollectionWithoutComparer",
+                        level => LoggerMessage.Define<string, string>(
+                            level,
+                            CoreEventId.CollectionWithoutComparer,
+                            _resourceManager.GetString("LogCollectionWithoutComparer"))));
+            }
+
+            return (EventDefinition<string, string>)definition;
+        }
+
+        /// <summary>
         ///     A transient exception has been encountered during execution and the operation will be retried after {delay}ms.{newline}{error}
         /// </summary>
         public static EventDefinition<int, string, Exception> LogExecutionStrategyRetrying([NotNull] IDiagnosticsLogger logger)
@@ -3844,6 +3892,30 @@ namespace Microsoft.EntityFrameworkCore.Diagnostics.Internal
             }
 
             return (EventDefinition<string, string>)definition;
+        }
+
+        /// <summary>
+        ///     'AddEntityFramework*' was called on the service provider, but 'UseInternalServiceProvider' wasn't called in the DbContext options configuration. Remove the 'AddEntityFramework*' call as in most cases it's not needed and might cause conflicts with other products and services registered in the same service provider.
+        /// </summary>
+        public static EventDefinition LogRedundantAddServicesCall([NotNull] IDiagnosticsLogger logger)
+        {
+            var definition = ((LoggingDefinitions)logger.Definitions).LogRedundantAddServicesCall;
+            if (definition == null)
+            {
+                definition = LazyInitializer.EnsureInitialized<EventDefinitionBase>(
+                    ref ((LoggingDefinitions)logger.Definitions).LogRedundantAddServicesCall,
+                    () => new EventDefinition(
+                        logger.Options,
+                        CoreEventId.RedundantAddServicesCallWarning,
+                        LogLevel.Warning,
+                        "CoreEventId.RedundantAddServicesCallWarning",
+                        level => LoggerMessage.Define(
+                            level,
+                            CoreEventId.RedundantAddServicesCallWarning,
+                            _resourceManager.GetString("LogRedundantAddServicesCall"))));
+            }
+
+            return (EventDefinition)definition;
         }
     }
 }

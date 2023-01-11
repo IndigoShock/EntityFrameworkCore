@@ -31,30 +31,6 @@ namespace Microsoft.EntityFrameworkCore.Cosmos
         }
 
         [ConditionalFact(Skip = "Issue #16919")]
-        public override void Can_query_using_any_data_type()
-        {
-            base.Can_query_using_any_data_type();
-        }
-
-        [ConditionalFact(Skip = "Issue #16919")]
-        public override void Can_query_using_any_data_type_nullable_shadow()
-        {
-            base.Can_query_using_any_data_type_nullable_shadow();
-        }
-
-        [ConditionalFact(Skip = "Issue #16919")]
-        public override void Can_query_using_any_data_type_shadow()
-        {
-            base.Can_query_using_any_data_type_shadow();
-        }
-
-        [ConditionalFact(Skip = "Issue #16919")]
-        public override void Can_query_using_any_nullable_data_type()
-        {
-            base.Can_query_using_any_nullable_data_type();
-        }
-
-        [ConditionalFact(Skip = "Issue #16919")]
         public override void Can_query_using_any_nullable_data_type_as_literal()
         {
             base.Can_query_using_any_nullable_data_type_as_literal();
@@ -66,7 +42,7 @@ namespace Microsoft.EntityFrameworkCore.Cosmos
             base.Can_query_with_null_parameters_using_any_nullable_data_type();
         }
 
-        [ConditionalFact(Skip = "Issue #16919")]
+        [ConditionalFact(Skip = "Issue #16920")]
         public override void Can_insert_and_read_back_with_string_key()
         {
             base.Can_insert_and_read_back_with_string_key();
@@ -81,6 +57,18 @@ namespace Microsoft.EntityFrameworkCore.Cosmos
         public override void Can_perform_query_with_max_length()
         {
             // TODO: Better translation of sequential equality #17246
+        }
+
+        [ConditionalFact(Skip = "Issue #17670")]
+        public override void Can_read_back_mapped_enum_from_collection_first_or_default()
+        {
+            base.Can_read_back_mapped_enum_from_collection_first_or_default();
+        }
+
+        [ConditionalFact(Skip = "Issue #17246")]
+        public override void Can_read_back_bool_mapped_as_int_through_navigation()
+        {
+            base.Can_read_back_bool_mapped_as_int_through_navigation();
         }
 
         public class BuiltInDataTypesCosmosFixture : BuiltInDataTypesFixtureBase

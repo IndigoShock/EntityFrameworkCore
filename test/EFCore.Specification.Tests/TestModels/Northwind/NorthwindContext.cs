@@ -105,7 +105,12 @@ namespace Microsoft.EntityFrameworkCore.TestModels.Northwind
                     () => Products
                         .Where(p => !p.Discontinued)
                         .Select(
-                            p => new ProductQuery { ProductID = p.ProductID, ProductName = p.ProductName, CategoryName = "Food" }));
+                            p => new ProductQuery
+                            {
+                                ProductID = p.ProductID,
+                                ProductName = p.ProductName,
+                                CategoryName = "Food"
+                            }));
 
             modelBuilder
                 .Query<CustomerQuery>()
@@ -118,7 +123,9 @@ namespace Microsoft.EntityFrameworkCore.TestModels.Northwind
                                 c =>
                                     new CustomerQuery
                                     {
-                                        CompanyName = c.CompanyName, OrderCount = c.Orders.Count(), SearchTerm = _searchTerm
+                                        CompanyName = c.CompanyName,
+                                        OrderCount = c.Orders.Count(),
+                                        SearchTerm = _searchTerm
                                     }));
 #pragma warning restore CS0618 // Type or member is obsolete
         }
@@ -134,7 +141,7 @@ namespace Microsoft.EntityFrameworkCore.TestModels.Northwind
             // so we can capture TenantPrefix in filter exprs (simulates OnModelCreating).
 
             modelBuilder.Entity<Customer>().HasQueryFilter(c => c.CompanyName.StartsWith(TenantPrefix));
-            modelBuilder.Entity<Order>().HasQueryFilter(o => o.Customer.CompanyName != null);
+            modelBuilder.Entity<Order>().HasQueryFilter(o => o.Customer != null && o.Customer.CompanyName != null);
             modelBuilder.Entity<OrderDetail>().HasQueryFilter(od => EF.Property<short>(od, "Quantity") > _quantity);
             modelBuilder.Entity<Employee>().HasQueryFilter(e => e.Address.StartsWith("A"));
             modelBuilder.Entity<Product>().HasQueryFilter(p => ClientMethod(p));

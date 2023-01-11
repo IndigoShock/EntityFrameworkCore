@@ -38,7 +38,9 @@ namespace Microsoft.EntityFrameworkCore.Cosmos.Query.Internal
             _sqlExpressionFactory = sqlExpressionFactory;
             _querySqlGeneratorFactory = querySqlGeneratorFactory;
             _contextType = queryCompilationContext.ContextType;
-            _logger = queryCompilationContext.Logger;
+            _logger = AppContext.TryGetSwitch("Microsoft.EntityFrameworkCore.Issue21016", out var isEnabled) && isEnabled
+                ? queryCompilationContext.Logger
+                : null;
         }
 
         /// <summary>
@@ -66,16 +68,14 @@ namespace Microsoft.EntityFrameworkCore.Cosmos.Query.Internal
                 jObjectParameter);
 
             return Expression.New(
-                (IsAsync
-                    ? typeof(AsyncQueryingEnumerable<>)
-                    : typeof(QueryingEnumerable<>)).MakeGenericType(shaperLambda.ReturnType).GetConstructors()[0],
+                typeof(QueryingEnumerable<>).MakeGenericType(shaperLambda.ReturnType).GetConstructors()[0],
                 Expression.Convert(QueryCompilationContext.QueryContextParameter, typeof(CosmosQueryContext)),
                 Expression.Constant(_sqlExpressionFactory),
                 Expression.Constant(_querySqlGeneratorFactory),
                 Expression.Constant(selectExpression),
                 Expression.Constant(shaperLambda.Compile()),
                 Expression.Constant(_contextType),
-                Expression.Constant(_logger));
+                Expression.Constant(_logger, typeof(IDiagnosticsLogger<DbLoggerCategory.Query>)));
         }
     }
 }

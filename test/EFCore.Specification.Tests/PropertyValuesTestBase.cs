@@ -1262,51 +1262,53 @@ namespace Microsoft.EntityFrameworkCore
         [InlineData(EntityState.Detached, false)]
         public async Task Reload_when_entity_deleted_in_store_can_happen_for_any_state(EntityState state, bool async)
         {
-            using (var context = CreateContext())
+            using var context = CreateContext();
+
+            var office = new Office { Number = "35" };
+            var mailRoom = new MailRoom { id = 36 };
+            var building = Building.Create(Guid.NewGuid(), "Bag End", 77);
+
+            building.Offices.Add(office);
+            building.PrincipalMailRoom = mailRoom;
+            office.Building = building;
+            mailRoom.Building = building;
+
+            var entry = context.Entry(building);
+
+            context.Attach(building);
+            entry.State = state;
+
+            if (async)
             {
-                var office = new Office { Number = "35" };
-                var mailRoom = new MailRoom { id = 36 };
-                var building = Building.Create(Guid.NewGuid(), "Bag End", 77);
+                await entry.ReloadAsync();
+            }
+            else
+            {
+                entry.Reload();
+            }
 
-                building.Offices.Add(office);
-                building.PrincipalMailRoom = mailRoom;
-                office.Building = building;
-                mailRoom.Building = building;
+            Assert.Equal("Bag End", entry.Property(e => e.Name).OriginalValue);
+            Assert.Equal("Bag End", entry.Property(e => e.Name).CurrentValue);
+            Assert.Equal("Bag End", building.Name);
 
-                var entry = context.Entry(building);
-
-                context.Attach(building);
-                entry.State = state;
-
-                if (async)
-                {
-                    await entry.ReloadAsync();
-                }
-                else
-                {
-                    entry.Reload();
-                }
-
-                Assert.Equal("Bag End", entry.Property(e => e.Name).OriginalValue);
-                Assert.Equal("Bag End", entry.Property(e => e.Name).CurrentValue);
-                Assert.Equal("Bag End", building.Name);
-
-                if (state == EntityState.Added)
-                {
-                    Assert.Equal(EntityState.Added, entry.State);
-                    Assert.Same(mailRoom, building.PrincipalMailRoom);
-                    Assert.Contains(office, building.Offices);
-                }
-                else
-                {
-                    Assert.Equal(EntityState.Detached, entry.State);
-                    Assert.Null(mailRoom.Building);
-                    Assert.Same(state == EntityState.Deleted ? building : null, office.Building);
-                }
-
+            if (state == EntityState.Added)
+            {
+                Assert.Equal(EntityState.Added, entry.State);
                 Assert.Same(mailRoom, building.PrincipalMailRoom);
                 Assert.Contains(office, building.Offices);
             }
+            else
+            {
+                Assert.Equal(EntityState.Detached, entry.State);
+                Assert.Same(mailRoom, building.PrincipalMailRoom);
+                Assert.Contains(office, building.Offices);
+
+                Assert.Equal(EntityState.Detached, context.Entry(office.Building).State);
+                Assert.Same(building, office.Building);
+            }
+
+            Assert.Same(mailRoom, building.PrincipalMailRoom);
+            Assert.Contains(office, building.Offices);
         }
 
         [ConditionalFact]
@@ -1428,7 +1430,10 @@ namespace Microsoft.EntityFrameworkCore
 
                 var newBuilding = new BuildingDto
                 {
-                    BuildingId = new Guid(building.BuildingId.ToString()), Name = "Values End", Value = building.Value, Shadow1 = 777
+                    BuildingId = new Guid(building.BuildingId.ToString()),
+                    Name = "Values End",
+                    Value = building.Value,
+                    Shadow1 = 777
                 };
 
                 buildingValues.SetValues(newBuilding);
@@ -1465,7 +1470,12 @@ namespace Microsoft.EntityFrameworkCore
                 var building = context.Set<Building>().Single(b => b.Name == "Building One");
                 var buildingValues = getPropertyValues(context.Entry(building));
 
-                var newBuilding = new BuildingDtoNoKey { Name = "Values End", Value = building.Value, Shadow2 = "Cheese" };
+                var newBuilding = new BuildingDtoNoKey
+                {
+                    Name = "Values End",
+                    Value = building.Value,
+                    Shadow2 = "Cheese"
+                };
 
                 buildingValues.SetValues(newBuilding);
 
@@ -2225,7 +2235,12 @@ namespace Microsoft.EntityFrameworkCore
             }
 
             public static Building Create(Guid buildingId, string name, decimal value)
-                => new Building { BuildingId = buildingId, Name = name, Value = value };
+                => new Building
+                {
+                    BuildingId = buildingId,
+                    Name = name,
+                    Value = value
+                };
 
             public Guid BuildingId { get; set; }
             public string Name { get; set; }
@@ -2457,7 +2472,10 @@ namespace Microsoft.EntityFrameworkCore
                     },
                     new PastEmployee
                     {
-                        EmployeeId = 3, FirstName = "John", LastName = "Doe", TerminationDate = new DateTime(2006, 1, 23)
+                        EmployeeId = 3,
+                        FirstName = "John",
+                        LastName = "Doe",
+                        TerminationDate = new DateTime(2006, 1, 23)
                     }
                 };
 
@@ -2480,9 +2498,24 @@ namespace Microsoft.EntityFrameworkCore
 
                 var whiteboards = new List<Whiteboard>
                 {
-                    new Whiteboard { AssetTag = "WB1973", iD = new byte[] { 1, 9, 7, 3 }, Office = offices[0] },
-                    new Whiteboard { AssetTag = "WB1977", iD = new byte[] { 1, 9, 7, 7 }, Office = offices[0] },
-                    new Whiteboard { AssetTag = "WB1970", iD = new byte[] { 1, 9, 7, 0 }, Office = offices[2] }
+                    new Whiteboard
+                    {
+                        AssetTag = "WB1973",
+                        iD = new byte[] { 1, 9, 7, 3 },
+                        Office = offices[0]
+                    },
+                    new Whiteboard
+                    {
+                        AssetTag = "WB1977",
+                        iD = new byte[] { 1, 9, 7, 7 },
+                        Office = offices[0]
+                    },
+                    new Whiteboard
+                    {
+                        AssetTag = "WB1970",
+                        iD = new byte[] { 1, 9, 7, 0 },
+                        Office = offices[2]
+                    }
                 };
 
                 foreach (var whiteboard in whiteboards)

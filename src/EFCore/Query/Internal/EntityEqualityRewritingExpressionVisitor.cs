@@ -58,6 +58,12 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
         protected override Expression VisitNew(NewExpression newExpression)
         {
+            // For .NET Framework only. If ctor is null that means the type is struct and has no ctor args.
+            if (newExpression.Constructor == null)
+            {
+                return newExpression;
+            }
+
             var visitedArgs = Visit(newExpression.Arguments);
             var visitedExpression = newExpression.Update(visitedArgs.Select(Unwrap));
 
@@ -126,6 +132,21 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 return (newBindings, bindingEntityReferenceInfo);
             }
         }
+
+        // Note that we could bubble up entity type information from the expressions initializing the array. However, EF Core doesn't
+        // actually support doing much further with this array, so it's not worth the complexity (right now). So we simply unwrap.
+        protected override Expression VisitNewArray(NewArrayExpression newArrayExpression)
+            => newArrayExpression.Update(Visit(newArrayExpression.Expressions).Select(Unwrap));
+
+        // Note that we could bubble up entity type information from the expressions initializing the list. However, EF Core doesn't
+        // actually support doing much further with this list, so it's not worth the complexity (right now). So we simply unwrap.
+        protected override Expression VisitListInit(ListInitExpression listInitExpression)
+            => listInitExpression.Update(
+                (NewExpression)Unwrap(listInitExpression.NewExpression),
+                listInitExpression.Initializers.Select(VisitElementInit));
+
+        protected override ElementInit VisitElementInit(ElementInit elementInit)
+            => Expression.ElementInit(elementInit.AddMethod, Visit(elementInit.Arguments).Select(Unwrap));
 
         protected override Expression VisitMember(MemberExpression memberExpression)
         {
@@ -218,14 +239,14 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             {
                 var (newLeft, newRight) = (Visit(methodCallExpression.Object), Visit(arguments[0]));
                 return RewriteEquality(true, newLeft, newRight)
-                       ?? methodCallExpression.Update(Unwrap(newLeft), new[] { Unwrap(newRight) });
+                    ?? methodCallExpression.Update(Unwrap(newLeft), new[] { Unwrap(newRight) });
             }
 
             if (method.Equals(_objectEqualsMethodInfo))
             {
                 var (newLeft, newRight) = (Visit(arguments[0]), Visit(arguments[1]));
                 return RewriteEquality(true, newLeft, newRight)
-                       ?? methodCallExpression.Update(null, new[] { Unwrap(newLeft), Unwrap(newRight) });
+                    ?? methodCallExpression.Update(null, new[] { Unwrap(newLeft), Unwrap(newRight) });
             }
 
             // Navigation via EF.Property() or via an indexer property
@@ -260,7 +281,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                     when genericMethod == QueryableMethods.Select:
                 case nameof(Queryable.SelectMany)
                     when genericMethod == QueryableMethods.SelectManyWithoutCollectionSelector
-                         || genericMethod == QueryableMethods.SelectManyWithCollectionSelector:
+                    || genericMethod == QueryableMethods.SelectManyWithCollectionSelector:
                     return VisitSelectMethodCall(methodCallExpression);
 
                 case nameof(Queryable.GroupJoin)
@@ -277,9 +298,9 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
                 case nameof(Queryable.GroupBy)
                     when genericMethod == QueryableMethods.GroupByWithKeySelector
-                         || genericMethod == QueryableMethods.GroupByWithKeyElementSelector
-                         || genericMethod == QueryableMethods.GroupByWithKeyResultSelector
-                         || genericMethod == QueryableMethods.GroupByWithKeyElementResultSelector:
+                    || genericMethod == QueryableMethods.GroupByWithKeyElementSelector
+                    || genericMethod == QueryableMethods.GroupByWithKeyResultSelector
+                    || genericMethod == QueryableMethods.GroupByWithKeyElementResultSelector:
                     break; // TODO: Implement
             }
 
@@ -357,7 +378,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             return methodCallExpression.Update(Unwrap(Visit(methodCallExpression.Object)), newArguments);
         }
 
-        protected virtual Expression VisitContainsMethodCall(MethodCallExpression methodCallExpression)
+        private Expression VisitContainsMethodCall(MethodCallExpression methodCallExpression)
         {
             // We handle both Contains the extension method and the instance method
             var (newSource, newItem) = methodCallExpression.Arguments.Count == 2
@@ -408,8 +429,26 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
                 rewrittenSource = Expression.Constant(keyList, keyListType);
             }
+            else if (AppContext.TryGetSwitch("Microsoft.EntityFrameworkCore.Issue20485", out var enabled) && enabled
+                && newSource is ParameterExpression listParam2
+                && listParam2.Name.StartsWith(CompiledQueryCache.CompiledQueryParameterPrefix, StringComparison.Ordinal))
+            {
+                // The source list is a parameter. Add a runtime parameter that will contain a list of the extracted keys for each execution.
+                var lambda = Expression.Lambda(
+                    Expression.Call(
+                        _parameterListValueExtractor.MakeGenericMethod(entityType.ClrType, keyProperty.ClrType.MakeNullable()),
+                        QueryCompilationContext.QueryContextParameter,
+                        Expression.Constant(listParam2.Name, typeof(string)),
+                        Expression.Constant(keyProperty, typeof(IProperty))),
+                    QueryCompilationContext.QueryContextParameter
+                );
+
+                var newParameterName =
+                    $"{RuntimeParameterPrefix}{listParam2.Name.Substring(CompiledQueryCache.CompiledQueryParameterPrefix.Length)}_{keyProperty.Name}";
+                rewrittenSource = _queryCompilationContext.RegisterRuntimeParameter(newParameterName, lambda);
+            }
             else if (newSource is ParameterExpression listParam
-                     && listParam.Name.StartsWith(CompiledQueryCache.CompiledQueryParameterPrefix, StringComparison.Ordinal))
+                && listParam.Name?.StartsWith(CompiledQueryCache.CompiledQueryParameterPrefix, StringComparison.Ordinal) == true)
             {
                 // The source list is a parameter. Add a runtime parameter that will contain a list of the extracted keys for each execution.
                 var lambda = Expression.Lambda(
@@ -454,7 +493,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 : methodCallExpression.Update(Unwrap(newSource), new[] { Unwrap(newItem) });
         }
 
-        protected virtual Expression VisitOrderingMethodCall(MethodCallExpression methodCallExpression)
+        private Expression VisitOrderingMethodCall(MethodCallExpression methodCallExpression)
         {
             var arguments = methodCallExpression.Arguments;
             var newSource = Visit(arguments[0]);
@@ -529,7 +568,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             }
         }
 
-        protected virtual Expression VisitSelectMethodCall(MethodCallExpression methodCallExpression)
+        private Expression VisitSelectMethodCall(MethodCallExpression methodCallExpression)
         {
             var arguments = methodCallExpression.Arguments;
             var newSource = Visit(arguments[0]);
@@ -576,7 +615,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             throw new InvalidOperationException(CoreStrings.QueryFailed(methodCallExpression.Print(), GetType().Name));
         }
 
-        protected virtual Expression VisitJoinMethodCall(MethodCallExpression methodCallExpression)
+        private Expression VisitJoinMethodCall(MethodCallExpression methodCallExpression)
         {
             var arguments = methodCallExpression.Arguments;
 
@@ -683,7 +722,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 : (Expression)newMethodCall;
         }
 
-        protected virtual Expression VisitOfType(MethodCallExpression methodCallExpression)
+        private Expression VisitOfType(MethodCallExpression methodCallExpression)
         {
             var newSource = Visit(methodCallExpression.Arguments[0]);
             var updatedMethodCall = methodCallExpression.Update(null, new[] { Unwrap(newSource) });
@@ -708,7 +747,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
         ///     Replaces the lambda's single parameter with a type wrapper based on the given source, and then visits
         ///     the lambda's body.
         /// </summary>
-        protected virtual LambdaExpression RewriteAndVisitLambda(LambdaExpression lambda, EntityReferenceExpression source)
+        private LambdaExpression RewriteAndVisitLambda(LambdaExpression lambda, EntityReferenceExpression source)
             => Expression.Lambda(
                 lambda.Type,
                 Visit(
@@ -723,7 +762,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
         ///     Replaces the lambda's two parameters with type wrappers based on the given sources, and then visits
         ///     the lambda's body.
         /// </summary>
-        protected virtual LambdaExpression RewriteAndVisitLambda(
+        private LambdaExpression RewriteAndVisitLambda(
             LambdaExpression lambda,
             EntityReferenceExpression source1,
             EntityReferenceExpression source2)
@@ -736,7 +775,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 lambda.Type,
                 Visit(
                     new ReplacingExpressionVisitor(
-                            new Dictionary<Expression, Expression> { { original1, replacement1 }, { original2, replacement2 } })
+                            new[] { original1, original2 }, new[] { replacement1, replacement2 })
                         .Visit(lambda.Body)),
                 lambda.TailCall,
                 lambda.Parameters);
@@ -747,7 +786,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
         ///     if possible.
         /// </summary>
         /// <returns> The rewritten entity equality expression, or null if rewriting could not occur for some reason. </returns>
-        protected virtual Expression RewriteEquality(bool equality, Expression left, Expression right)
+        private Expression RewriteEquality(bool equality, Expression left, Expression right)
         {
             // TODO: Consider throwing if a child has no flowed entity type, but has a Type that corresponds to an entity type on the model.
             // TODO: This would indicate an issue in our flowing logic, and would help the user (and us) understand what's going on.
@@ -876,34 +915,13 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 CreateKeyAccessExpression(Unwrap(right), keyProperties));
         }
 
-        protected override Expression VisitExtension(Expression expression)
+        protected override Expression VisitExtension(Expression extensionExpression)
         {
-            switch (expression)
-            {
-                case EntityReferenceExpression _:
-                    // If the expression is an EntityReferenceExpression, simply returns it as all rewriting has already occurred.
-                    // This is necessary when traversing wrapping expressions that have been injected into the lambda for parameters.
-                    return expression;
-
-                case NullConditionalExpression nullConditionalExpression:
-                    return VisitNullConditional(nullConditionalExpression);
-
-                default:
-                    return base.VisitExtension(expression);
-            }
-        }
-
-        protected virtual Expression VisitNullConditional(NullConditionalExpression expression)
-        {
-            var newCaller = Visit(expression.Caller);
-            var newAccessOperation = Visit(expression.AccessOperation);
-            var visitedExpression = expression.Update(Unwrap(newCaller), Unwrap(newAccessOperation));
-
-            // TODO: Can the access operation be anything else than a MemberExpression?
-            return newCaller is EntityReferenceExpression wrapper
-                   && expression.AccessOperation is MemberExpression memberExpression
-                ? wrapper.TraverseProperty(memberExpression.Member.Name, visitedExpression)
-                : visitedExpression;
+            // If the expression is an EntityReferenceExpression, simply returns it as all rewriting has already occurred.
+            // This is necessary when traversing wrapping expressions that have been injected into the lambda for parameters.
+            return extensionExpression is EntityReferenceExpression
+                ? extensionExpression
+                : base.VisitExtension(extensionExpression);
         }
 
         private Expression CreateKeyAccessExpression(
@@ -935,24 +953,49 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 return Expression.Constant(property.GetGetter().GetClrValue(value), property.ClrType.MakeNullable());
             }
 
-            // If the target is a query parameter, we can't simply add a property access over it, but must instead cause a new
-            // parameter to be added at runtime, with the value of the property on the base parameter.
-            if (target is ParameterExpression baseParameterExpression
-                && baseParameterExpression.Name.StartsWith(CompiledQueryCache.CompiledQueryParameterPrefix, StringComparison.Ordinal))
+            if (AppContext.TryGetSwitch("Microsoft.EntityFrameworkCore.Issue20485", out var enabled) && enabled)
             {
-                // Generate an expression to get the base parameter from the query context's parameter list, and extract the
-                // property from that
-                var lambda = Expression.Lambda(
-                    Expression.Call(
-                        _parameterValueExtractor.MakeGenericMethod(property.ClrType.MakeNullable()),
-                        QueryCompilationContext.QueryContextParameter,
-                        Expression.Constant(baseParameterExpression.Name, typeof(string)),
-                        Expression.Constant(property, typeof(IProperty))),
-                    QueryCompilationContext.QueryContextParameter);
+                // If the target is a query parameter, we can't simply add a property access over it, but must instead cause a new
+                // parameter to be added at runtime, with the value of the property on the base parameter.
+                if (target is ParameterExpression baseParameterExpression
+                && baseParameterExpression.Name.StartsWith(CompiledQueryCache.CompiledQueryParameterPrefix, StringComparison.Ordinal))
+                {
+                    // Generate an expression to get the base parameter from the query context's parameter list, and extract the
+                    // property from that
+                    var lambda = Expression.Lambda(
+                        Expression.Call(
+                            _parameterValueExtractor.MakeGenericMethod(property.ClrType.MakeNullable()),
+                            QueryCompilationContext.QueryContextParameter,
+                            Expression.Constant(baseParameterExpression.Name, typeof(string)),
+                            Expression.Constant(property, typeof(IProperty))),
+                        QueryCompilationContext.QueryContextParameter);
 
-                var newParameterName =
-                    $"{RuntimeParameterPrefix}{baseParameterExpression.Name.Substring(CompiledQueryCache.CompiledQueryParameterPrefix.Length)}_{property.Name}";
-                return _queryCompilationContext.RegisterRuntimeParameter(newParameterName, lambda);
+                    var newParameterName =
+                        $"{RuntimeParameterPrefix}{baseParameterExpression.Name.Substring(CompiledQueryCache.CompiledQueryParameterPrefix.Length)}_{property.Name}";
+                    return _queryCompilationContext.RegisterRuntimeParameter(newParameterName, lambda);
+                }
+            }
+            else
+            {
+                // If the target is a query parameter, we can't simply add a property access over it, but must instead cause a new
+                // parameter to be added at runtime, with the value of the property on the base parameter.
+                if (target is ParameterExpression baseParameterExpression
+                && baseParameterExpression.Name?.StartsWith(CompiledQueryCache.CompiledQueryParameterPrefix, StringComparison.Ordinal) == true)
+                {
+                    // Generate an expression to get the base parameter from the query context's parameter list, and extract the
+                    // property from that
+                    var lambda = Expression.Lambda(
+                        Expression.Call(
+                            _parameterValueExtractor.MakeGenericMethod(property.ClrType.MakeNullable()),
+                            QueryCompilationContext.QueryContextParameter,
+                            Expression.Constant(baseParameterExpression.Name, typeof(string)),
+                            Expression.Constant(property, typeof(IProperty))),
+                        QueryCompilationContext.QueryContextParameter);
+
+                    var newParameterName =
+                        $"{RuntimeParameterPrefix}{baseParameterExpression.Name.Substring(CompiledQueryCache.CompiledQueryParameterPrefix.Length)}_{property.Name}";
+                    return _queryCompilationContext.RegisterRuntimeParameter(newParameterName, lambda);
+                }
             }
 
             return target.CreateEFPropertyExpression(property);
@@ -970,8 +1013,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
                 case MemberInitExpression memberInitExpression:
                     return CanEvaluate(memberInitExpression.NewExpression)
-                           && memberInitExpression.Bindings.All(
-                               mb => mb is MemberAssignment memberAssignment && CanEvaluate(memberAssignment.Expression));
+                        && memberInitExpression.Bindings.All(
+                            mb => mb is MemberAssignment memberAssignment && CanEvaluate(memberAssignment.Expression));
 
                 default:
                     return false;
@@ -1013,10 +1056,10 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
         protected static Expression UnwrapLastNavigation(Expression expression)
             => (expression as MemberExpression)?.Expression
-               ?? (expression is MethodCallExpression methodCallExpression
-                   && methodCallExpression.Method.IsEFPropertyMethod()
-                   ? methodCallExpression.Arguments[0]
-                   : null);
+                ?? (expression is MethodCallExpression methodCallExpression
+                    && methodCallExpression.Method.IsEFPropertyMethod()
+                        ? methodCallExpression.Arguments[0]
+                        : null);
 
         protected static Expression Unwrap(Expression expression)
             => expression switch
@@ -1036,7 +1079,8 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             public static EntityOrDtoType FromEntityReferenceExpression(EntityReferenceExpression ere)
                 => new EntityOrDtoType
                 {
-                    EntityType = ere.IsEntityType ? ere.EntityType : null, DtoType = ere.IsDtoType ? ere.DtoType : null
+                    EntityType = ere.IsEntityType ? ere.EntityType : null,
+                    DtoType = ere.IsDtoType ? ere.DtoType : null
                 };
 
             public static EntityOrDtoType FromDtoType(Dictionary<string, EntityOrDtoType> dtoType)

@@ -79,6 +79,7 @@ namespace Microsoft.EntityFrameworkCore.Diagnostics
             ContextDisposed,
             DetachedLazyLoadingWarning,
             ServiceProviderDebugInfo,
+            RedundantAddServicesCallWarning,
 
             // Model events
             ShadowPropertyCreated = CoreBaseId + 600,
@@ -101,6 +102,7 @@ namespace Microsoft.EntityFrameworkCore.Diagnostics
             NonNullableReferenceOnDependent,
             RequiredAttributeInverted,
             RequiredAttributeOnCollection,
+            CollectionWithoutComparer,
 
             // ChangeTracking events
             DetectChangesStarting = CoreBaseId + 800,
@@ -380,6 +382,19 @@ namespace Microsoft.EntityFrameworkCore.Diagnostics
         ///     </para>
         /// </summary>
         public static readonly EventId DetachedLazyLoadingWarning = MakeInfraId(Id.DetachedLazyLoadingWarning);
+
+        /// <summary>
+        ///     <para>
+        ///         'AddEntityFramework*' was called on the service provider, but 'UseInternalServiceProvider' wasn't.
+        ///     </para>
+        ///     <para>
+        ///         This event is in the <see cref="DbLoggerCategory.Infrastructure" /> category.
+        ///     </para>
+        ///     <para>
+        ///         This event uses the <see cref="ServiceProviderEventData" /> payload when used with a <see cref="DiagnosticSource" />.
+        ///     </para>
+        /// </summary>
+        public static readonly EventId RedundantAddServicesCallWarning = MakeInfraId(Id.RedundantAddServicesCallWarning);
 
         private static readonly string _modelPrefix = DbLoggerCategory.Model.Name + ".";
         private static EventId MakeModelId(Id id) => new EventId((int)id, _modelPrefix + id);
@@ -884,5 +899,18 @@ namespace Microsoft.EntityFrameworkCore.Diagnostics
         ///     </para>
         /// </summary>
         public static readonly EventId ContextDisposed = MakeInfraId(Id.ContextDisposed);
+
+        /// <summary>
+        ///     <para>
+        ///         A property has a collection or enumeration type with a value converter but with no value comparer.
+        ///     </para>
+        ///     <para>
+        ///         This event is in the <see cref="DbLoggerCategory.Model.Validation" /> category.
+        ///     </para>
+        ///     <para>
+        ///         This event uses the <see cref="PropertyEventData" /> payload when used with a <see cref="DiagnosticSource" />.
+        ///     </para>
+        /// </summary>
+        public static readonly EventId CollectionWithoutComparer = MakeModelValidationId(Id.CollectionWithoutComparer);
     }
 }

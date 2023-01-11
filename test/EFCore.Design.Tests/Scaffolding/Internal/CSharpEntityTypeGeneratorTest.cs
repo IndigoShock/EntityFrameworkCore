@@ -38,6 +38,10 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
+// Code scaffolded by EF Core assumes nullable reference types (NRTs) are not used or disabled.
+// If you have enabled NRTs for your project, then un-comment the following line:
+// #nullable disable
+
 namespace TestNamespace
 {
     public partial class Post
@@ -74,7 +78,7 @@ namespace TestNamespace
         }
 
         [ConditionalFact]
-        public void Navigation_property_with_same_type_and_property_name()
+        public void Navigation_property_with_same_type_and_navigation_name()
         {
             Test(
                 modelBuilder => modelBuilder
@@ -97,6 +101,10 @@ namespace TestNamespace
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+
+// Code scaffolded by EF Core assumes nullable reference types (NRTs) are not used or disabled.
+// If you have enabled NRTs for your project, then un-comment the following line:
+// #nullable disable
 
 namespace TestNamespace
 {
@@ -129,6 +137,139 @@ namespace TestNamespace
         }
 
         [ConditionalFact]
+        public void Navigation_property_with_same_type_and_property_name()
+        {
+            Test(
+                modelBuilder => modelBuilder
+                    .Entity(
+                        "Blog",
+                        x => x.Property<int>("Id"))
+                    .Entity(
+                        "Post",
+                        x =>
+                        {
+                            x.Property<int>("Id");
+                            x.HasOne("Blog", "BlogNavigation").WithMany("Posts").HasForeignKey("Blog");
+                        }),
+                new ModelCodeGenerationOptions { UseDataAnnotations = true },
+                code =>
+                {
+                    var postFile = code.AdditionalFiles.First(f => f.Path == "Post.cs");
+                    Assert.Equal(
+                        @"using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+// Code scaffolded by EF Core assumes nullable reference types (NRTs) are not used or disabled.
+// If you have enabled NRTs for your project, then un-comment the following line:
+// #nullable disable
+
+namespace TestNamespace
+{
+    public partial class Post
+    {
+        [Key]
+        public int Id { get; set; }
+        public int? Blog { get; set; }
+
+        [ForeignKey(nameof(Blog))]
+        [InverseProperty(""Posts"")]
+        public virtual Blog BlogNavigation { get; set; }
+    }
+}
+",
+                        postFile.Code);
+                },
+                model =>
+                {
+                    var postType = model.FindEntityType("TestNamespace.Post");
+                    var blogNavigation = postType.FindNavigation("BlogNavigation");
+
+                    var foreignKeyProperty = Assert.Single(blogNavigation.ForeignKey.Properties);
+                    Assert.Equal("Blog", foreignKeyProperty.Name);
+
+                    var inverseNavigation = blogNavigation.FindInverse();
+                    Assert.Equal("TestNamespace.Blog", inverseNavigation.DeclaringEntityType.Name);
+                    Assert.Equal("Posts", inverseNavigation.Name);
+                });
+        }
+
+        [ConditionalFact]
+        public void Navigation_property_with_same_type_and_other_navigation_name()
+        {
+            Test(
+                modelBuilder => modelBuilder
+                    .Entity(
+                        "Blog",
+                        x => x.Property<int>("Id"))
+                    .Entity(
+                        "Post",
+                        x =>
+                        {
+                            x.Property<int>("Id");
+                            x.HasOne("Blog", "Blog").WithMany("Posts");
+                            x.HasOne("Blog", "OriginalBlog").WithMany("OriginalPosts").HasForeignKey("OriginalBlogId");
+                        }),
+                new ModelCodeGenerationOptions { UseDataAnnotations = true },
+                code =>
+                {
+                    var postFile = code.AdditionalFiles.First(f => f.Path == "Post.cs");
+                    Assert.Equal(
+                        @"using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+// Code scaffolded by EF Core assumes nullable reference types (NRTs) are not used or disabled.
+// If you have enabled NRTs for your project, then un-comment the following line:
+// #nullable disable
+
+namespace TestNamespace
+{
+    public partial class Post
+    {
+        [Key]
+        public int Id { get; set; }
+        public int? BlogId { get; set; }
+        public int? OriginalBlogId { get; set; }
+
+        [ForeignKey(nameof(BlogId))]
+        [InverseProperty(""Posts"")]
+        public virtual Blog Blog { get; set; }
+        [ForeignKey(nameof(OriginalBlogId))]
+        [InverseProperty(""OriginalPosts"")]
+        public virtual Blog OriginalBlog { get; set; }
+    }
+}
+",
+                        postFile.Code);
+                },
+                model =>
+                {
+                    var postType = model.FindEntityType("TestNamespace.Post");
+
+                    var blogNavigation = postType.FindNavigation("Blog");
+
+                    var foreignKeyProperty = Assert.Single(blogNavigation.ForeignKey.Properties);
+                    Assert.Equal("BlogId", foreignKeyProperty.Name);
+
+                    var inverseNavigation = blogNavigation.FindInverse();
+                    Assert.Equal("TestNamespace.Blog", inverseNavigation.DeclaringEntityType.Name);
+                    Assert.Equal("Posts", inverseNavigation.Name);
+
+                    var originalBlogNavigation = postType.FindNavigation("OriginalBlog");
+
+                    var originalForeignKeyProperty = Assert.Single(originalBlogNavigation.ForeignKey.Properties);
+                    Assert.Equal("OriginalBlogId", originalForeignKeyProperty.Name);
+
+                    var originalInverseNavigation = originalBlogNavigation.FindInverse();
+                    Assert.Equal("TestNamespace.Blog", originalInverseNavigation.DeclaringEntityType.Name);
+                    Assert.Equal("OriginalPosts", originalInverseNavigation.Name);
+                });
+        }
+
+        [ConditionalFact]
         public void Composite_key()
         {
             Test(
@@ -150,6 +291,10 @@ namespace TestNamespace
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+
+// Code scaffolded by EF Core assumes nullable reference types (NRTs) are not used or disabled.
+// If you have enabled NRTs for your project, then un-comment the following line:
+// #nullable disable
 
 namespace TestNamespace
 {

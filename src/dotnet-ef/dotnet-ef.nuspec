@@ -5,12 +5,10 @@
     <packageTypes>
       <packageType name="$packageType$" />
     </packageTypes>
-    <dependencies>
-      <group targetFramework=".NETCoreApp2.1" />
-    </dependencies>
   </metadata>
 
   <files>
+    $CommonFileElements$
     <file src="$SettingsFile$" target="tools\$targetFramework$\any" />
     <file src="$Output$" target="tools\$targetFramework$\any" />
     <file src="$OutputBinary$" target="tools\$targetFramework$\any\tools\netcoreapp2.0\any" />
@@ -20,5 +18,7 @@
     <file src="$OutputExeSymbol$" target="tools\$targetFramework$\any\tools\net461\any" />
     <file src="$OutputX86Exe$" target="tools\$targetFramework$\any\tools\net461\win-x86" />
     <file src="$OutputX86ExeSymbol$" target="tools\$targetFramework$\any\tools\net461\win-x86" />
+    <file src="$OutputARM64Exe$" target="tools\$targetFramework$\any\tools\net461\win-arm64" />
+    <file src="$OutputARM64ExeSymbol$" target="tools\$targetFramework$\any\tools\net461\win-arm64" />
   </files>
 </package>

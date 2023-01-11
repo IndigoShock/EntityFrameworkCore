@@ -76,6 +76,11 @@ namespace Microsoft.EntityFrameworkCore.Scaffolding.Internal
             }
 
             _sb.AppendLine();
+            _sb.AppendLine("// Code scaffolded by EF Core assumes nullable reference types (NRTs) are not used or disabled.");
+            _sb.AppendLine("// If you have enabled NRTs for your project, then un-comment the following line:");
+            _sb.AppendLine("// #nullable disable");
+
+            _sb.AppendLine();
             _sb.AppendLine($"namespace {@namespace}");
             _sb.AppendLine("{");
 
@@ -365,7 +370,8 @@ namespace Microsoft.EntityFrameworkCore.Scaffolding.Internal
                     var inversePropertyAttribute = new AttributeWriter(nameof(InversePropertyAttribute));
 
                     inversePropertyAttribute.AddParameter(
-                        navigation.Name != inverseNavigation.DeclaringEntityType.Name
+                        !navigation.DeclaringEntityType.GetPropertiesAndNavigations().Any(
+                                m => m.Name == inverseNavigation.DeclaringEntityType.Name)
                             ? $"nameof({inverseNavigation.DeclaringEntityType.Name}.{inverseNavigation.Name})"
                             : _code.Literal(inverseNavigation.Name));
 
@@ -400,7 +406,7 @@ namespace Microsoft.EntityFrameworkCore.Scaffolding.Internal
 
             private static string StripAttribute([NotNull] string attributeName)
                 => attributeName.EndsWith("Attribute", StringComparison.Ordinal)
-                    ? attributeName[..^9]
+                    ? attributeName.Substring(0, attributeName.Length - 9)
                     : attributeName;
         }
     }

@@ -25,10 +25,13 @@ namespace Microsoft.EntityFrameworkCore.Query
             return base.Project_collection_navigation_nested_with_take(isAsync);
         }
 
-        [ConditionalFact(Skip = "Issue #17230")]
-        public override void Include_inside_subquery()
+        [ConditionalTheory(Skip = "Issue #17230")]
+        public override Task Include_inside_subquery(bool isAsync)
         {
-            base.Include_inside_subquery();
+            return base.Include_inside_subquery(isAsync);
         }
+
+        // Sqlite does not support cross/outer apply
+        public override Task SelectMany_with_outside_reference_to_joined_table_correctly_translated_to_apply(bool async) => null;
     }
 }

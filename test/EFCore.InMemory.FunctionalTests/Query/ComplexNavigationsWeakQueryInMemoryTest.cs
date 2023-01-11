@@ -47,5 +47,23 @@ namespace Microsoft.EntityFrameworkCore.Query
         {
             return base.Optional_navigation_propagates_nullability_to_manually_created_left_join2(isAsync);
         }
+
+        [ConditionalTheory(Skip = "issue #17620")]
+        public override Task Lift_projection_mapping_when_pushing_down_subquery(bool isAsync)
+        {
+            return base.Lift_projection_mapping_when_pushing_down_subquery(isAsync);
+        }
+
+        [ConditionalTheory(Skip = "issue #18912")]
+        public override Task OrderBy_collection_count_ThenBy_reference_navigation(bool async)
+        {
+            return base.OrderBy_collection_count_ThenBy_reference_navigation(async);
+        }
+
+        [ConditionalTheory(Skip = "issue #19967")]
+        public override Task SelectMany_with_outside_reference_to_joined_table_correctly_translated_to_apply(bool async)
+        {
+            return base.SelectMany_with_outside_reference_to_joined_table_correctly_translated_to_apply(async);
+        }
     }
 }

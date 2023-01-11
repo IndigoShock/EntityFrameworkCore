@@ -979,6 +979,10 @@
     <value>The property '{property}' on entity type '{entityType}' was created in shadow state because there are no eligible CLR members with a matching name.</value>
     <comment>Debug CoreEventId.ShadowPropertyCreated string string</comment>
   </data>
+  <data name="LogCollectionWithoutComparer" xml:space="preserve">
+    <value>The property '{property}' on entity type '{entityType}' is a collection or enumeration type with a value converter but with no value comparer. Set a value comparer to ensure the collection/enumeration elements are compared correctly.</value>
+    <comment>Warning CoreEventId.CollectionWithoutComparer string string</comment>
+  </data>
   <data name="LogExecutionStrategyRetrying" xml:space="preserve">
     <value>A transient exception has been encountered during execution and the operation will be retried after {delay}ms.{newline}{error}</value>
     <comment>Information CoreEventId.ExecutionStrategyRetrying int string Exception</comment>
@@ -1219,7 +1223,20 @@
     <value>'{principalEntityType}.{principalNavigation}' may still be null at runtime despite being declared as non-nullable since only the navigation to principal can be configured as required.</value>
     <comment>Debug CoreEventId.NonNullableReferenceOnDependent string string</comment>
   </data>
+  <data name="LogRedundantAddServicesCall" xml:space="preserve">
+    <value>'AddEntityFramework*' was called on the service provider, but 'UseInternalServiceProvider' wasn't called in the DbContext options configuration. Remove the 'AddEntityFramework*' call as in most cases it's not needed and might cause conflicts with other products and services registered in the same service provider.</value>
+    <comment>Warning CoreEventId.RedundantAddServicesCallWarning</comment>
+  </data>
   <data name="ClashingNonOwnedDerivedEntityType" xml:space="preserve">
     <value>The type '{entityType}' cannot be marked as owned because the derived entity type - '{derivedType}' has been configured as non-owned.</value>
+  </data>
+  <data name="ClientProjectionCapturingConstantInMethodArgument" xml:space="preserve">
+    <value>Client projection contains reference to constant expression of '{constantType}' which is being passed as argument to method '{methodName}'. This could potentially cause memory leak. Consider assigning this constant to local variable and using the variable in the query instead. See https://go.microsoft.com/fwlink/?linkid=2103067 for more information.</value>
+  </data>
+  <data name="ClientProjectionCapturingConstantInMethodInstance" xml:space="preserve">
+    <value>Client projection contains reference to constant expression of '{constantType}' through instance method '{methodName}'. This could potentially cause memory leak. Consider making the method static so that it does not capture constant in the instance. See https://go.microsoft.com/fwlink/?linkid=2103067 for more information.</value>
+  </data>
+  <data name="ClientProjectionCapturingConstantInTree" xml:space="preserve">
+    <value>Client projection contains reference to constant expression of '{constantType}'. This could potentially cause memory leak. Consider assigning this constant to local variable and using the variable in the query instead. See https://go.microsoft.com/fwlink/?linkid=2103067 for more information.</value>
   </data>
 </root>

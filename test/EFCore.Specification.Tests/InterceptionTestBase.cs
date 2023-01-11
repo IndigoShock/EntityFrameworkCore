@@ -61,11 +61,6 @@ namespace Microsoft.EntityFrameworkCore
             }
         }
 
-        protected void AssertSql(string expected, string actual)
-            => Assert.Equal(
-                expected,
-                actual.Replace("\r", string.Empty).Replace("\n", " "));
-
         protected (DbContext, TInterceptor) CreateContext<TInterceptor>(bool inject = false)
             where TInterceptor : class, IInterceptor, new()
         {
@@ -102,7 +97,8 @@ namespace Microsoft.EntityFrameworkCore
             }
         }
 
-        public class TestDiagnosticListener : ITestDiagnosticListener, IObserver<DiagnosticListener>,
+        public class TestDiagnosticListener : ITestDiagnosticListener,
+            IObserver<DiagnosticListener>,
             IObserver<KeyValuePair<string, object>>
         {
             private readonly DbContextId _contextId;
@@ -181,7 +177,7 @@ namespace Microsoft.EntityFrameworkCore
             public virtual DbContextOptions CreateOptions(
                 IEnumerable<IInterceptor> appInterceptors,
                 IEnumerable<IInterceptor> injectedInterceptors)
-                => base.AddOptions(
+                => AddOptions(
                         TestStore
                             .AddProviderOptions(
                                 new DbContextOptionsBuilder()

@@ -814,8 +814,17 @@ namespace Microsoft.EntityFrameworkCore.ModelBuilding
                 var model = modelBuilder.Model;
 
                 modelBuilder.Entity<DynamicProperty>(
-                    b => b.Property(e => e.ExpandoObject).HasConversion(
-                        v => (string)((IDictionary<string, object>)v)["Value"], v => DeserializeExpandoObject(v)));
+                    b =>
+                    {
+                        b.Property(e => e.ExpandoObject).HasConversion(
+                            v => (string)((IDictionary<string, object>)v)["Value"], v => DeserializeExpandoObject(v));
+
+                        var comparer = new ValueComparer<ExpandoObject>(
+                            (v1, v2) => v1.SequenceEqual(v2),
+                            v => v.GetHashCode());
+
+                        b.Property(e => e.ExpandoObject).Metadata.SetValueComparer(comparer);
+                    });
 
                 modelBuilder.FinalizeModel();
 
@@ -862,12 +871,14 @@ namespace Microsoft.EntityFrameworkCore.ModelBuilding
                     {
                         b.Property<int>("Up").HasField("_forUp");
                         b.Property(e => e.Down).HasField("_forDown");
+                        b.Property<int?>("_forWierd").HasField("_forWierd");
                     });
 
                 var entityType = (IEntityType)model.FindEntityType(typeof(Quarks));
 
                 Assert.Equal("_forUp", entityType.FindProperty("Up").GetFieldName());
                 Assert.Equal("_forDown", entityType.FindProperty("Down").GetFieldName());
+                Assert.Equal("_forWierd", entityType.FindProperty("_forWierd").GetFieldName());
             }
 
             [ConditionalFact]

@@ -70,9 +70,9 @@ namespace Microsoft.EntityFrameworkCore.InMemory.Query.Internal
             }
 
             if (!(expression is NewExpression
-                  || expression is MemberInitExpression
-                  || expression is EntityShaperExpression
-                  || expression is IncludeExpression))
+                || expression is MemberInitExpression
+                || expression is EntityShaperExpression
+                || expression is IncludeExpression))
             {
                 // This skips the group parameter from GroupJoin
                 if (expression is ParameterExpression parameter
@@ -141,7 +141,8 @@ namespace Microsoft.EntityFrameworkCore.InMemory.Query.Internal
                         translation = NullSafeConvert(translation, expression.Type);
                     }
 
-                    return new ProjectionBindingExpression(_queryExpression, _queryExpression.AddToProjection(translation), expression.Type);
+                    return new ProjectionBindingExpression(
+                        _queryExpression, _queryExpression.AddToProjection(translation), expression.Type);
                 }
                 else
                 {
@@ -204,13 +205,11 @@ namespace Microsoft.EntityFrameworkCore.InMemory.Query.Internal
                     return entityShaperExpression.Update(
                         new ProjectionBindingExpression(_queryExpression, _queryExpression.AddToProjection(entityProjectionExpression)));
                 }
-                else
-                {
-                    _projectionMapping[_projectionMembers.Peek()] = entityProjectionExpression;
 
-                    return entityShaperExpression.Update(
-                        new ProjectionBindingExpression(_queryExpression, _projectionMembers.Peek(), typeof(ValueBuffer)));
-                }
+                _projectionMapping[_projectionMembers.Peek()] = entityProjectionExpression;
+
+                return entityShaperExpression.Update(
+                    new ProjectionBindingExpression(_queryExpression, _projectionMembers.Peek(), typeof(ValueBuffer)));
             }
 
             if (extensionExpression is IncludeExpression includeExpression)
@@ -225,6 +224,12 @@ namespace Microsoft.EntityFrameworkCore.InMemory.Query.Internal
 
         protected override Expression VisitNew(NewExpression newExpression)
         {
+            // For .NET Framework only. If ctor is null that means the type is struct and has no ctor args.
+            if (newExpression.Constructor == null)
+            {
+                return newExpression;
+            }
+
             if (newExpression.Arguments.Count == 0)
             {
                 return newExpression;
@@ -262,7 +267,7 @@ namespace Microsoft.EntityFrameworkCore.InMemory.Query.Internal
 
         protected override Expression VisitMemberInit(MemberInitExpression memberInitExpression)
         {
-            var newExpression = VisitAndConvert(memberInitExpression.NewExpression, nameof(VisitMemberInit));
+            var newExpression = Visit(memberInitExpression.NewExpression);
             if (newExpression == null)
             {
                 return null;
@@ -283,7 +288,7 @@ namespace Microsoft.EntityFrameworkCore.InMemory.Query.Internal
                 }
             }
 
-            return memberInitExpression.Update(newExpression, newBindings);
+            return memberInitExpression.Update((NewExpression)newExpression, newBindings);
         }
 
         protected override MemberAssignment VisitMemberAssignment(MemberAssignment memberAssignment)

@@ -26,6 +26,8 @@ namespace Microsoft.EntityFrameworkCore.Storage
     /// </summary>
     public abstract class RelationalTypeMapping : CoreTypeMapping
     {
+        private readonly bool _quirk19128;
+
         /// <summary>
         ///     Parameter object for use in the <see cref="RelationalTypeMapping" /> hierarchy.
         /// </summary>
@@ -254,6 +256,8 @@ namespace Microsoft.EntityFrameworkCore.Storage
             }
 
             StoreType = storeType;
+
+            _quirk19128 = AppContext.TryGetSwitch("Microsoft.EntityFrameworkCore.Issue19825", out var enabled) && enabled;
         }
 
         /// <summary>
@@ -279,18 +283,18 @@ namespace Microsoft.EntityFrameworkCore.Storage
                 storeType = storeTypeNameBase + "(" + size + ")";
             }
             else if (parameters.StoreTypePostfix == StoreTypePostfix.PrecisionAndScale
-                     || parameters.StoreTypePostfix == StoreTypePostfix.Precision)
+                || parameters.StoreTypePostfix == StoreTypePostfix.Precision)
             {
                 var precision = parameters.Precision;
                 if (precision != null)
                 {
                     var scale = parameters.Scale;
                     storeType = storeTypeNameBase
-                                + "("
-                                + (scale == null || parameters.StoreTypePostfix == StoreTypePostfix.Precision
-                                    ? precision.ToString()
-                                    : precision + "," + scale)
-                                + ")";
+                        + "("
+                        + (scale == null || parameters.StoreTypePostfix == StoreTypePostfix.Precision
+                            ? precision.ToString()
+                            : precision + "," + scale)
+                        + ")";
                 }
             }
 
@@ -435,6 +439,11 @@ namespace Microsoft.EntityFrameworkCore.Storage
             parameter.Direction = ParameterDirection.Input;
             parameter.ParameterName = name;
 
+            if (!_quirk19128)
+            {
+                value = ConvertUnderlyingEnumValueToEnum(value);
+            }
+
             if (Converter != null)
             {
                 value = Converter.ConvertToProvider(value);
@@ -457,6 +466,15 @@ namespace Microsoft.EntityFrameworkCore.Storage
             return parameter;
         }
 
+        // Enum when compared to constant will always have value of integral type
+        // when enum would contain convert node. We remove the convert node but we also
+        // need to convert the integral value to enum value.
+        // This allows us to use converter on enum value or print enum value directly if supported by provider
+        private object ConvertUnderlyingEnumValueToEnum(object value)
+            => value?.GetType().IsInteger() == true && ClrType.UnwrapNullableType().IsEnum
+            ? Enum.ToObject(ClrType.UnwrapNullableType(), value)
+            : value;
+
         /// <summary>
         ///     Configures type information of a <see cref="DbParameter" />.
         /// </summary>
@@ -474,15 +492,7 @@ namespace Microsoft.EntityFrameworkCore.Storage
         /// </returns>
         public virtual string GenerateSqlLiteral([CanBeNull] object value)
         {
-            // Enum when compared to constant will always have constant of integral type
-            // when enum would contain convert node. We remove the convert node but we also
-            // need to convert the integral value to enum value.
-            // This allows us to use converter on enum value or print enum value directly if supported by provider
-            if (value?.GetType().IsInteger() == true
-                && ClrType.UnwrapNullableType().IsEnum)
-            {
-                value = Enum.ToObject(ClrType.UnwrapNullableType(), value);
-            }
+            value = ConvertUnderlyingEnumValueToEnum(value);
 
             if (Converter != null)
             {
@@ -523,10 +533,18 @@ namespace Microsoft.EntityFrameworkCore.Storage
         {
             var type = (Converter?.ProviderClrType ?? ClrType).UnwrapNullableType();
 
-            return _getXMethods.TryGetValue(type, out var method)
+            return GetDataReaderMethod(type);
+        }
+
+        /// <summary>
+        ///     The method to use when reading values of the given type. The method must be defined
+        ///     on <see cref="DbDataReader" />.
+        /// </summary>
+        /// <returns> The method to use to read the value. </returns>
+        public static MethodInfo GetDataReaderMethod([NotNull] Type type)
+            => _getXMethods.TryGetValue(type, out var method)
                 ? method
                 : _getFieldValueMethod.MakeGenericMethod(type);
-        }
 
         /// <summary>
         ///     Gets a custom expression tree for reading the value from the input data reader

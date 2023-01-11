@@ -70,9 +70,9 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
             }
 
             if (!(expression is NewExpression
-                  || expression is MemberInitExpression
-                  || expression is EntityShaperExpression
-                  || expression is IncludeExpression))
+                || expression is MemberInitExpression
+                || expression is EntityShaperExpression
+                || expression is IncludeExpression))
             {
                 // This skips the group parameter from GroupJoin
                 if (expression is ParameterExpression parameter
@@ -132,17 +132,17 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                                     }
 
                                     return QueryableMethods.IsAverageWithoutSelector(method)
-                                           || QueryableMethods.IsAverageWithSelector(method)
-                                           || method == QueryableMethods.MaxWithoutSelector
-                                           || method == QueryableMethods.MaxWithSelector
-                                           || method == QueryableMethods.MinWithoutSelector
-                                           || method == QueryableMethods.MinWithSelector
-                                           || QueryableMethods.IsSumWithoutSelector(method)
-                                           || QueryableMethods.IsSumWithSelector(method);
+                                        || QueryableMethods.IsAverageWithSelector(method)
+                                        || method == QueryableMethods.MaxWithoutSelector
+                                        || method == QueryableMethods.MaxWithSelector
+                                        || method == QueryableMethods.MinWithoutSelector
+                                        || method == QueryableMethods.MinWithSelector
+                                        || QueryableMethods.IsSumWithoutSelector(method)
+                                        || QueryableMethods.IsSumWithSelector(method);
                                 }
 
                                 if (!(subquery.ShaperExpression is ProjectionBindingExpression
-                                      || IsAggregateResultWithCustomShaper(methodCallExpression.Method)))
+                                    || IsAggregateResultWithCustomShaper(methodCallExpression.Method)))
                                 {
                                     return _selectExpression.AddSingleProjection(subquery);
                                 }
@@ -225,6 +225,12 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
         protected override Expression VisitNew(NewExpression newExpression)
         {
+            // For .NET Framework only. If ctor is null that means the type is struct and has no ctor args.
+            if (newExpression.Constructor == null)
+            {
+                return newExpression;
+            }
+
             if (newExpression.Arguments.Count == 0)
             {
                 return newExpression;
@@ -262,7 +268,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
 
         protected override Expression VisitMemberInit(MemberInitExpression memberInitExpression)
         {
-            var newExpression = VisitAndConvert(memberInitExpression.NewExpression, nameof(VisitMemberInit));
+            var newExpression = Visit(memberInitExpression.NewExpression);
             if (newExpression == null)
             {
                 return null;
@@ -284,7 +290,7 @@ namespace Microsoft.EntityFrameworkCore.Query.Internal
                 }
             }
 
-            return memberInitExpression.Update(newExpression, newBindings);
+            return memberInitExpression.Update((NewExpression)newExpression, newBindings);
         }
 
         protected override MemberAssignment VisitMemberAssignment(MemberAssignment memberAssignment)

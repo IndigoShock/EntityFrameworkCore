@@ -51,11 +51,22 @@ namespace Microsoft.EntityFrameworkCore.SqlServer.Query.Internal
                 switch (memberName)
                 {
                     case nameof(DateTime.Date):
+                        if (AppContext.TryGetSwitch("Microsoft.EntityFrameworkCore.Issue19052", out var isEnabled) && isEnabled)
+                        {
+                            return _sqlExpressionFactory.Function(
+                                "CONVERT",
+                                new[] { _sqlExpressionFactory.Fragment("date"), instance },
+                                returnType,
+                                instance.TypeMapping);
+                        }
+
                         return _sqlExpressionFactory.Function(
                             "CONVERT",
                             new[] { _sqlExpressionFactory.Fragment("date"), instance },
                             returnType,
-                            instance.TypeMapping);
+                            declaringType == typeof(DateTime)
+                                ? instance.TypeMapping
+                                : _sqlExpressionFactory.FindMapping(typeof(DateTime)));
 
                     case nameof(DateTime.TimeOfDay):
                         return _sqlExpressionFactory.Convert(instance, returnType);

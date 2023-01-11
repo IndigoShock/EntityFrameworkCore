@@ -17,12 +17,15 @@ namespace Microsoft.EntityFrameworkCore.InMemory.Query.Internal
     {
         private static readonly ConstructorInfo _valueBufferConstructor
             = typeof(ValueBuffer).GetConstructors().Single(ci => ci.GetParameters().Length == 1);
+
         private static readonly PropertyInfo _valueBufferCountMemberInfo
             = typeof(ValueBuffer).GetTypeInfo().GetProperty(nameof(ValueBuffer.Count));
 
         private readonly List<Expression> _valueBufferSlots = new List<Expression>();
+
         private readonly IDictionary<EntityProjectionExpression, IDictionary<IProperty, int>> _entityProjectionCache
             = new Dictionary<EntityProjectionExpression, IDictionary<IProperty, int>>();
+
         private readonly ParameterExpression _valueBufferParameter;
 
         private IDictionary<ProjectionMember, Expression> _projectionMapping = new Dictionary<ProjectionMember, Expression>();
@@ -49,7 +52,8 @@ namespace Microsoft.EntityFrameworkCore.InMemory.Query.Internal
                 readExpressionMap[property] = Condition(
                     LessThan(
                         Constant(property.GetIndex()),
-                        MakeMemberAccess(_valueBufferParameter,
+                        MakeMemberAccess(
+                            _valueBufferParameter,
                             _valueBufferCountMemberInfo)),
                     CreateReadValueExpression(property.ClrType, property.GetIndex(), property),
                     Default(property.ClrType));
@@ -138,7 +142,8 @@ namespace Microsoft.EntityFrameworkCore.InMemory.Query.Internal
             if (serverQueryExpression is MethodCallExpression selectMethodCall
                 && selectMethodCall.Arguments[0].Type == typeof(ResultEnumerable))
             {
-                var terminatingMethodCall = (MethodCallExpression)((LambdaExpression)((NewExpression)selectMethodCall.Arguments[0]).Arguments[0]).Body;
+                var terminatingMethodCall =
+                    (MethodCallExpression)((LambdaExpression)((NewExpression)selectMethodCall.Arguments[0]).Arguments[0]).Body;
                 selectMethodCall = selectMethodCall.Update(
                     null, new[] { terminatingMethodCall.Arguments[0], selectMethodCall.Arguments[1] });
                 serverQueryExpression = terminatingMethodCall.Update(null, new[] { selectMethodCall });
@@ -171,15 +176,14 @@ namespace Microsoft.EntityFrameworkCore.InMemory.Query.Internal
                     {
                         return new ProjectionBindingExpression(projectionBindingExpression.QueryExpression, indexMap);
                     }
-                    else if (mappingValue is int index)
+
+                    if (mappingValue is int index)
                     {
                         return new ProjectionBindingExpression(
                             projectionBindingExpression.QueryExpression, index, projectionBindingExpression.Type);
                     }
-                    else
-                    {
-                        throw new InvalidOperationException("Invalid ProjectionMapping.");
-                    }
+
+                    throw new InvalidOperationException("Invalid ProjectionMapping.");
                 }
 
                 return base.Visit(expression);
@@ -209,6 +213,7 @@ namespace Microsoft.EntityFrameworkCore.InMemory.Query.Internal
                             var index = AddToProjection(expressionToAdd);
                             map[property] = CreateReadValueExpression(expressionToAdd.Type, index, property);
                         }
+
                         result[keyValuePair.Key] = new EntityProjectionExpression(entityProjection.EntityType, map);
                     }
                     else
@@ -234,7 +239,7 @@ namespace Microsoft.EntityFrameworkCore.InMemory.Query.Internal
             _groupingParameter = null;
 
             ServerQueryExpression = Call(
-                InMemoryLinqOperatorProvider.Select.MakeGenericMethod(ServerQueryExpression.Type.TryGetSequenceType(), typeof(ValueBuffer)),
+                EnumerableMethods.Select.MakeGenericMethod(ServerQueryExpression.Type.TryGetSequenceType(), typeof(ValueBuffer)),
                 ServerQueryExpression,
                 selectorLambda);
 
@@ -272,6 +277,7 @@ namespace Microsoft.EntityFrameworkCore.InMemory.Query.Internal
                         var index = AddToProjection(expressionToAdd);
                         map[property] = CreateReadValueExpression(expressionToAdd.Type.MakeNullable(), index, property);
                     }
+
                     result[keyValuePair.Key] = new EntityProjectionExpression(entityProjection.EntityType, map);
                 }
                 else
@@ -296,12 +302,12 @@ namespace Microsoft.EntityFrameworkCore.InMemory.Query.Internal
             _groupingParameter = null;
 
             ServerQueryExpression = Call(
-                InMemoryLinqOperatorProvider.Select.MakeGenericMethod(ServerQueryExpression.Type.TryGetSequenceType(), typeof(ValueBuffer)),
+                EnumerableMethods.Select.MakeGenericMethod(ServerQueryExpression.Type.TryGetSequenceType(), typeof(ValueBuffer)),
                 ServerQueryExpression,
                 selectorLambda);
 
             ServerQueryExpression = Call(
-                InMemoryLinqOperatorProvider.DefaultIfEmptyWithArgument.MakeGenericMethod(typeof(ValueBuffer)),
+                EnumerableMethods.DefaultIfEmptyWithArgument.MakeGenericMethod(typeof(ValueBuffer)),
                 ServerQueryExpression,
                 New(_valueBufferConstructor, NewArrayInit(typeof(object), Enumerable.Repeat(Constant(null), _valueBufferSlots.Count))));
 
@@ -334,6 +340,7 @@ namespace Microsoft.EntityFrameworkCore.InMemory.Query.Internal
                         {
                             map[property] = AddToProjection(entityProjection.BindProperty(property));
                         }
+
                         result[keyValuePair.Key] = Constant(map);
                     }
                     else
@@ -356,7 +363,7 @@ namespace Microsoft.EntityFrameworkCore.InMemory.Query.Internal
                 CurrentParameter);
 
             ServerQueryExpression = Call(
-                InMemoryLinqOperatorProvider.Select.MakeGenericMethod(typeof(ValueBuffer), typeof(ValueBuffer)),
+                EnumerableMethods.Select.MakeGenericMethod(typeof(ValueBuffer), typeof(ValueBuffer)),
                 ServerQueryExpression,
                 selectorLambda);
         }
@@ -381,11 +388,11 @@ namespace Microsoft.EntityFrameworkCore.InMemory.Query.Internal
                 _valueBufferParameter);
 
             ServerQueryExpression = Call(
-                    InMemoryLinqOperatorProvider.GroupByWithKeyElementSelector.MakeGenericMethod(
-                        typeof(ValueBuffer), typeof(ValueBuffer), typeof(ValueBuffer)),
-                    selectMethod.Arguments[0],
-                    keySelector,
-                    selectMethod.Arguments[1]);
+                EnumerableMethods.GroupByWithKeyElementSelector.MakeGenericMethod(
+                    typeof(ValueBuffer), typeof(ValueBuffer), typeof(ValueBuffer)),
+                selectMethod.Arguments[0],
+                keySelector,
+                selectMethod.Arguments[1]);
 
             return new InMemoryGroupByShaperExpression(
                 groupingKey,
@@ -399,11 +406,18 @@ namespace Microsoft.EntityFrameworkCore.InMemory.Query.Internal
             switch (key)
             {
                 case NewExpression newExpression:
+                    // For .NET Framework only. If ctor is null that means the type is struct and has no ctor args.
+                    if (newExpression.Constructor == null)
+                    {
+                        return newExpression;
+                    }
+
                     var arguments = new Expression[newExpression.Arguments.Count];
                     for (var i = 0; i < arguments.Length; i++)
                     {
                         arguments[i] = GetGroupingKey(newExpression.Arguments[i], groupingExpressions, groupingKeyAccessExpression);
                     }
+
                     return newExpression.Update(arguments);
 
                 case MemberInitExpression memberInitExpression:
@@ -424,6 +438,7 @@ namespace Microsoft.EntityFrameworkCore.InMemory.Query.Internal
                                 groupingExpressions,
                                 groupingKeyAccessExpression));
                     }
+
                     return memberInitExpression.Update(updatedNewExpression, memberBindings);
 
                 default:
@@ -459,11 +474,8 @@ namespace Microsoft.EntityFrameworkCore.InMemory.Query.Internal
             var resultValueBufferExpressions = new List<Expression>();
             var projectionMapping = new Dictionary<ProjectionMember, Expression>();
             var replacingVisitor = new ReplacingExpressionVisitor(
-                    new Dictionary<Expression, Expression>
-                    {
-                        { CurrentParameter, outerParameter },
-                        { innerQueryExpression.CurrentParameter, innerParameter }
-                    });
+                new Expression[] { CurrentParameter, innerQueryExpression.CurrentParameter },
+                new Expression[] { outerParameter, innerParameter });
 
             var index = 0;
             var outerMemberInfo = transparentIdentifierType.GetTypeInfo().GetDeclaredField("Outer");
@@ -526,7 +538,7 @@ namespace Microsoft.EntityFrameworkCore.InMemory.Query.Internal
                 innerParameter);
 
             ServerQueryExpression = Call(
-                InMemoryLinqOperatorProvider.Join.MakeGenericMethod(
+                EnumerableMethods.Join.MakeGenericMethod(
                     typeof(ValueBuffer), typeof(ValueBuffer), outerKeySelector.ReturnType, typeof(ValueBuffer)),
                 ServerQueryExpression,
                 innerQueryExpression.ServerQueryExpression,
@@ -558,7 +570,7 @@ namespace Microsoft.EntityFrameworkCore.InMemory.Query.Internal
                 innerParameter);
 
             var groupJoinExpression = Call(
-                InMemoryLinqOperatorProvider.GroupJoin.MakeGenericMethod(
+                EnumerableMethods.GroupJoin.MakeGenericMethod(
                     typeof(ValueBuffer), typeof(ValueBuffer), outerKeySelector.ReturnType, groupTransparentIdentifierType),
                 ServerQueryExpression,
                 innerQueryExpression.ServerQueryExpression,
@@ -575,11 +587,8 @@ namespace Microsoft.EntityFrameworkCore.InMemory.Query.Internal
             var resultValueBufferExpressions = new List<Expression>();
             var projectionMapping = new Dictionary<ProjectionMember, Expression>();
             var replacingVisitor = new ReplacingExpressionVisitor(
-                    new Dictionary<Expression, Expression>
-                    {
-                        { CurrentParameter, MakeMemberAccess(outerParameter, outerMemberInfo) },
-                        { innerQueryExpression.CurrentParameter, innerParameter }
-                    });
+                new Expression[] { CurrentParameter, innerQueryExpression.CurrentParameter },
+                new Expression[] { MakeMemberAccess(outerParameter, outerMemberInfo), innerParameter});
 
             var index = 0;
             outerMemberInfo = transparentIdentifierType.GetTypeInfo().GetDeclaredField("Outer");
@@ -638,7 +647,7 @@ namespace Microsoft.EntityFrameworkCore.InMemory.Query.Internal
 
             var collectionSelector = Lambda(
                 Call(
-                    InMemoryLinqOperatorProvider.DefaultIfEmptyWithArgument.MakeGenericMethod(typeof(ValueBuffer)),
+                    EnumerableMethods.DefaultIfEmptyWithArgument.MakeGenericMethod(typeof(ValueBuffer)),
                     collection,
                     New(
                         _valueBufferConstructor,
@@ -659,7 +668,7 @@ namespace Microsoft.EntityFrameworkCore.InMemory.Query.Internal
                 innerParameter);
 
             ServerQueryExpression = Call(
-                InMemoryLinqOperatorProvider.SelectManyWithCollectionSelector.MakeGenericMethod(
+                EnumerableMethods.SelectManyWithCollectionSelector.MakeGenericMethod(
                     groupTransparentIdentifierType, typeof(ValueBuffer), typeof(ValueBuffer)),
                 groupJoinExpression,
                 collectionSelector,
@@ -675,11 +684,8 @@ namespace Microsoft.EntityFrameworkCore.InMemory.Query.Internal
             var resultValueBufferExpressions = new List<Expression>();
             var projectionMapping = new Dictionary<ProjectionMember, Expression>();
             var replacingVisitor = new ReplacingExpressionVisitor(
-                    new Dictionary<Expression, Expression>
-                    {
-                        { CurrentParameter, outerParameter },
-                        { innerQueryExpression.CurrentParameter, innerParameter }
-                    });
+                new Expression[] { CurrentParameter, innerQueryExpression.CurrentParameter },
+                new Expression[] { outerParameter, innerParameter });
 
             var index = 0;
             var outerMemberInfo = transparentIdentifierType.GetTypeInfo().GetDeclaredField("Outer");
@@ -720,6 +726,7 @@ namespace Microsoft.EntityFrameworkCore.InMemory.Query.Internal
                         {
                             replacedExpression = nullableReadValueExpressionVisitor.Visit(replacedExpression);
                         }
+
                         resultValueBufferExpressions.Add(replacedExpression);
                         readExpressionMap[property] = CreateReadValueExpression(replacedExpression.Type, index++, property);
                     }
@@ -734,6 +741,7 @@ namespace Microsoft.EntityFrameworkCore.InMemory.Query.Internal
                     {
                         replacedExpression = nullableReadValueExpressionVisitor.Visit(replacedExpression);
                     }
+
                     resultValueBufferExpressions.Add(replacedExpression);
                     projectionMapping[projection.Key.Prepend(innerMemberInfo)]
                         = CreateReadValueExpression(replacedExpression.Type, index++, InferPropertyFromInner(projection.Value));
@@ -752,7 +760,7 @@ namespace Microsoft.EntityFrameworkCore.InMemory.Query.Internal
                 innerParameter);
 
             ServerQueryExpression = Call(
-                InMemoryLinqOperatorProvider.SelectManyWithCollectionSelector.MakeGenericMethod(
+                EnumerableMethods.SelectManyWithCollectionSelector.MakeGenericMethod(
                     typeof(ValueBuffer), typeof(ValueBuffer), typeof(ValueBuffer)),
                 ServerQueryExpression,
                 Lambda(innerQueryExpression.ServerQueryExpression, CurrentParameter),
@@ -778,13 +786,12 @@ namespace Microsoft.EntityFrameworkCore.InMemory.Query.Internal
             var resultSelector = Lambda(
                 New(
                     groupTransparentIdentifierType.GetTypeInfo().DeclaredConstructors.Single(),
-                    new[] { outerParameter, innerParameter },
-                    new[] { outerMemberInfo, innerMemberInfo }),
+                    new[] { outerParameter, innerParameter }, outerMemberInfo, innerMemberInfo),
                 outerParameter,
                 innerParameter);
 
             var groupJoinExpression = Call(
-                InMemoryLinqOperatorProvider.GroupJoin.MakeGenericMethod(
+                EnumerableMethods.GroupJoin.MakeGenericMethod(
                     typeof(ValueBuffer), typeof(ValueBuffer), outerKeySelector.ReturnType, groupTransparentIdentifierType),
                 ServerQueryExpression,
                 innerQueryExpression.ServerQueryExpression,
@@ -801,11 +808,8 @@ namespace Microsoft.EntityFrameworkCore.InMemory.Query.Internal
             var resultValueBufferExpressions = new List<Expression>();
             var projectionMapping = new Dictionary<ProjectionMember, Expression>();
             var replacingVisitor = new ReplacingExpressionVisitor(
-                new Dictionary<Expression, Expression>
-                {
-                    { CurrentParameter, MakeMemberAccess(outerParameter, outerMemberInfo) },
-                    { innerQueryExpression.CurrentParameter, innerParameter }
-                });
+                new Expression[] { CurrentParameter, innerQueryExpression.CurrentParameter },
+                new Expression[] { MakeMemberAccess(outerParameter, outerMemberInfo), innerParameter});
             var index = 0;
 
             EntityProjectionExpression copyEntityProjectionToOuter(EntityProjectionExpression entityProjection)
@@ -826,7 +830,7 @@ namespace Microsoft.EntityFrameworkCore.InMemory.Query.Internal
 
                 // Also lift nested entity projections
                 foreach (var navigation in entityProjection.EntityType.GetTypesInHierarchy()
-                            .SelectMany(EntityTypeExtensions.GetDeclaredNavigations))
+                    .SelectMany(EntityTypeExtensions.GetDeclaredNavigations))
                 {
                     var boundEntityShaperExpression = entityProjection.BindNavigation(navigation);
                     if (boundEntityShaperExpression != null)
@@ -870,11 +874,12 @@ namespace Microsoft.EntityFrameworkCore.InMemory.Query.Internal
                 resultValueBufferExpressions.Add(replacedExpression);
                 innerReadExpressionMap[property] = CreateReadValueExpression(replacedExpression.Type, index++, property);
             }
+
             innerEntityProjection = new EntityProjectionExpression(innerEntityProjection.EntityType, innerReadExpressionMap);
 
             var collectionSelector = Lambda(
                 Call(
-                    InMemoryLinqOperatorProvider.DefaultIfEmptyWithArgument.MakeGenericMethod(typeof(ValueBuffer)),
+                    EnumerableMethods.DefaultIfEmptyWithArgument.MakeGenericMethod(typeof(ValueBuffer)),
                     collection,
                     New(
                         _valueBufferConstructor,
@@ -895,7 +900,7 @@ namespace Microsoft.EntityFrameworkCore.InMemory.Query.Internal
                 innerParameter);
 
             ServerQueryExpression = Call(
-                InMemoryLinqOperatorProvider.SelectManyWithCollectionSelector.MakeGenericMethod(
+                EnumerableMethods.SelectManyWithCollectionSelector.MakeGenericMethod(
                     groupTransparentIdentifierType, typeof(ValueBuffer), typeof(ValueBuffer)),
                 groupJoinExpression,
                 collectionSelector,

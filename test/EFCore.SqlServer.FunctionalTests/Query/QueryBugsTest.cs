@@ -23,7 +23,7 @@ using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 
-#pragma warning disable CA1034 // Nested types should not be visible
+#pragma warning disable IDE0063 // Use simple 'using' statement
 
 // ReSharper disable InconsistentNaming
 // ReSharper disable ClassNeverInstantiated.Local
@@ -36,7 +36,9 @@ namespace Microsoft.EntityFrameworkCore.Query
     public class QueryBugsTest : IClassFixture<SqlServerFixture>
     {
         // ReSharper disable once UnusedParameter.Local
+#pragma warning disable IDE0060 // Remove unused parameter
         public QueryBugsTest(SqlServerFixture fixture, ITestOutputHelper testOutputHelper)
+#pragma warning restore IDE0060 // Remove unused parameter
         {
             Fixture = fixture;
             Fixture.TestSqlLoggerFactory.Clear();
@@ -58,9 +60,9 @@ namespace Microsoft.EntityFrameworkCore.Query
                 {
                     var query = context.Dates.Where(
                         d => d.DateTime2_2 == DateTime.Now
-                             || d.DateTime2_7 == DateTime.Now
-                             || d.DateTime == DateTime.Now
-                             || d.SmallDateTime == DateTime.Now);
+                            || d.DateTime2_7 == DateTime.Now
+                            || d.DateTime == DateTime.Now
+                            || d.SmallDateTime == DateTime.Now);
 
                     var results = async
                         ? await query.ToListAsync()
@@ -89,9 +91,9 @@ WHERE ((([d].[DateTime2_2] = GETDATE()) OR ([d].[DateTime2_7] = GETDATE())) OR (
                 {
                     var query = context.Dates.Where(
                         d => d.DateTime2_2 != DateTime.Now
-                             && d.DateTime2_7 != DateTime.Now
-                             && d.DateTime != DateTime.Now
-                             && d.SmallDateTime != DateTime.Now);
+                            && d.DateTime2_7 != DateTime.Now
+                            && d.DateTime != DateTime.Now
+                            && d.SmallDateTime != DateTime.Now);
 
                     var results = async
                         ? await query.ToListAsync()
@@ -102,7 +104,7 @@ WHERE ((([d].[DateTime2_2] = GETDATE()) OR ([d].[DateTime2_7] = GETDATE())) OR (
                     AssertSql(
                         @"SELECT [d].[Id], [d].[DateTime], [d].[DateTime2], [d].[DateTime2_0], [d].[DateTime2_1], [d].[DateTime2_2], [d].[DateTime2_3], [d].[DateTime2_4], [d].[DateTime2_5], [d].[DateTime2_6], [d].[DateTime2_7], [d].[SmallDateTime]
 FROM [Dates] AS [d]
-WHERE ((([d].[DateTime2_2] <> GETDATE()) AND ([d].[DateTime2_7] <> GETDATE())) AND ([d].[DateTime] <> GETDATE())) AND ([d].[SmallDateTime] <> GETDATE())");
+WHERE (((([d].[DateTime2_2] <> GETDATE()) OR GETDATE() IS NULL) AND (([d].[DateTime2_7] <> GETDATE()) OR GETDATE() IS NULL)) AND (([d].[DateTime] <> GETDATE()) OR GETDATE() IS NULL)) AND (([d].[SmallDateTime] <> GETDATE()) OR GETDATE() IS NULL)");
                 }
             }
         }
@@ -120,16 +122,16 @@ WHERE ((([d].[DateTime2_2] <> GETDATE()) AND ([d].[DateTime2_7] <> GETDATE())) A
                 {
                     var query = context.Dates.Where(
                         d => d.SmallDateTime == new DateTime(1970, 9, 3, 12, 0, 0)
-                             && d.DateTime == new DateTime(1971, 9, 3, 12, 0, 10, 220)
-                             && d.DateTime2 == new DateTime(1972, 9, 3, 12, 0, 10, 333)
-                             && d.DateTime2_0 == new DateTime(1973, 9, 3, 12, 0, 10)
-                             && d.DateTime2_1 == new DateTime(1974, 9, 3, 12, 0, 10, 500)
-                             && d.DateTime2_2 == new DateTime(1975, 9, 3, 12, 0, 10, 660)
-                             && d.DateTime2_3 == new DateTime(1976, 9, 3, 12, 0, 10, 777)
-                             && d.DateTime2_4 == new DateTime(1977, 9, 3, 12, 0, 10, 888)
-                             && d.DateTime2_5 == new DateTime(1978, 9, 3, 12, 0, 10, 999)
-                             && d.DateTime2_6 == new DateTime(1979, 9, 3, 12, 0, 10, 111)
-                             && d.DateTime2_7 == new DateTime(1980, 9, 3, 12, 0, 10, 222));
+                            && d.DateTime == new DateTime(1971, 9, 3, 12, 0, 10, 220)
+                            && d.DateTime2 == new DateTime(1972, 9, 3, 12, 0, 10, 333)
+                            && d.DateTime2_0 == new DateTime(1973, 9, 3, 12, 0, 10)
+                            && d.DateTime2_1 == new DateTime(1974, 9, 3, 12, 0, 10, 500)
+                            && d.DateTime2_2 == new DateTime(1975, 9, 3, 12, 0, 10, 660)
+                            && d.DateTime2_3 == new DateTime(1976, 9, 3, 12, 0, 10, 777)
+                            && d.DateTime2_4 == new DateTime(1977, 9, 3, 12, 0, 10, 888)
+                            && d.DateTime2_5 == new DateTime(1978, 9, 3, 12, 0, 10, 999)
+                            && d.DateTime2_6 == new DateTime(1979, 9, 3, 12, 0, 10, 111)
+                            && d.DateTime2_7 == new DateTime(1980, 9, 3, 12, 0, 10, 222));
 
                     var results = async
                         ? await query.ToListAsync()
@@ -173,16 +175,16 @@ WHERE (((((((((([d].[SmallDateTime] = '1970-09-03T12:00:00') AND ([d].[DateTime]
                 {
                     var query = context.Dates.Where(
                         d => dateTimes.Contains(d.SmallDateTime)
-                             && dateTimes.Contains(d.DateTime)
-                             && dateTimes.Contains(d.DateTime2)
-                             && dateTimes.Contains(d.DateTime2_0)
-                             && dateTimes.Contains(d.DateTime2_1)
-                             && dateTimes.Contains(d.DateTime2_2)
-                             && dateTimes.Contains(d.DateTime2_3)
-                             && dateTimes.Contains(d.DateTime2_4)
-                             && dateTimes.Contains(d.DateTime2_5)
-                             && dateTimes.Contains(d.DateTime2_6)
-                             && dateTimes.Contains(d.DateTime2_7));
+                            && dateTimes.Contains(d.DateTime)
+                            && dateTimes.Contains(d.DateTime2)
+                            && dateTimes.Contains(d.DateTime2_0)
+                            && dateTimes.Contains(d.DateTime2_1)
+                            && dateTimes.Contains(d.DateTime2_2)
+                            && dateTimes.Contains(d.DateTime2_3)
+                            && dateTimes.Contains(d.DateTime2_4)
+                            && dateTimes.Contains(d.DateTime2_5)
+                            && dateTimes.Contains(d.DateTime2_6)
+                            && dateTimes.Contains(d.DateTime2_7));
 
                     var results = async
                         ? await query.ToListAsync()
@@ -373,7 +375,7 @@ INSERT [dbo].[Postcodes] ([PostcodeID], [PostcodeValue], [TownName]) VALUES (5, 
                         = await context.Persons
                             .Where(
                                 p => p.AddressOne != null && p.AddressOne.Street.Contains("Low Street")
-                                     || p.AddressTwo != null && p.AddressTwo.Street.Contains("Low Street"))
+                                    || p.AddressTwo != null && p.AddressTwo.Street.Contains("Low Street"))
                             .CountAsync();
 
                     Assert.Equal(0, count);
@@ -587,7 +589,7 @@ INSERT [dbo].[Postcodes] ([PostcodeID], [PostcodeValue], [TownName]) VALUES (5, 
                     AssertSql(
                         @"SELECT [c].[FirstName], [c].[LastName], [o].[Id], [o].[CustomerFirstName], [o].[CustomerLastName], [o].[Name]
 FROM [Customer] AS [c]
-LEFT JOIN [Order] AS [o] ON (([c].[FirstName] = [o].[CustomerFirstName]) AND [o].[CustomerFirstName] IS NOT NULL) AND (([c].[LastName] = [o].[CustomerLastName]) AND [o].[CustomerLastName] IS NOT NULL)
+LEFT JOIN [Order] AS [o] ON ([c].[FirstName] = [o].[CustomerFirstName]) AND ([c].[LastName] = [o].[CustomerLastName])
 ORDER BY [c].[FirstName], [c].[LastName], [o].[Id]");
                 }
             }
@@ -613,7 +615,7 @@ ORDER BY [c].[FirstName], [c].[LastName], [o].[Id]");
                     AssertSql(
                         @"SELECT [o].[Id], [o].[CustomerFirstName], [o].[CustomerLastName], [o].[Name], [c].[FirstName], [c].[LastName]
 FROM [Order] AS [o]
-LEFT JOIN [Customer] AS [c] ON (([o].[CustomerFirstName] = [c].[FirstName]) AND [o].[CustomerFirstName] IS NOT NULL) AND (([o].[CustomerLastName] = [c].[LastName]) AND [o].[CustomerLastName] IS NOT NULL)");
+LEFT JOIN [Customer] AS [c] ON ([o].[CustomerFirstName] = [c].[FirstName]) AND ([o].[CustomerLastName] = [c].[LastName])");
                 }
             }
         }
@@ -640,7 +642,12 @@ LEFT JOIN [Customer] AS [c] ON (([o].[CustomerFirstName] = [c].[FirstName]) AND 
                     {
                         FirstName = "Customer",
                         LastName = "Two",
-                        Orders = new List<Order> { order21, order22, order23 }
+                        Orders = new List<Order>
+                        {
+                            order21,
+                            order22,
+                            order23
+                        }
                     };
 
                     context.Customers.AddRange(customer1, customer2);
@@ -651,21 +658,21 @@ LEFT JOIN [Customer] AS [c] ON (([o].[CustomerFirstName] = [c].[FirstName]) AND 
                 });
         }
 
-        public class Customer
+        private class Customer
         {
             public string FirstName { get; set; }
             public string LastName { get; set; }
             public List<Order> Orders { get; set; }
         }
 
-        public class Order
+        private class Order
         {
             public int Id { get; set; }
             public string Name { get; set; }
             public Customer Customer { get; set; }
         }
 
-        public class MyContext925 : DbContext
+        private class MyContext925 : DbContext
         {
             public MyContext925(DbContextOptions options)
                 : base(options)
@@ -792,7 +799,13 @@ LEFT JOIN [Customer] AS [c] ON (([o].[CustomerFirstName] = [c].[FirstName]) AND 
 
                     var permissions = (from project in projects
                                        from user in users
-                                       select new ProjectUser { ProjectId = project.Id, Project = project, UserId = user.Id, User = user })
+                                       select new ProjectUser
+                                       {
+                                           ProjectId = project.Id,
+                                           Project = project,
+                                           UserId = user.Id,
+                                           User = user
+                                       })
                         .ToList();
 
                     context.ProjectUsers.AddRange(permissions);
@@ -888,7 +901,12 @@ Queen of the Andals and the Rhoynar and the First Men, Khaleesi of the Great Gra
                     {
                         Name = "Daenerys",
                         Details = details,
-                        Dragons = new List<Dragon> { drogon, rhaegal, viserion }
+                        Dragons = new List<Dragon>
+                        {
+                            drogon,
+                            rhaegal,
+                            viserion
+                        }
                     };
                     context.Targaryens.AddRange(daenerys, aerys);
                     context.Dragons.AddRange(drogon, rhaegal, viserion, balerion);
@@ -898,7 +916,7 @@ Queen of the Andals and the Rhoynar and the First Men, Khaleesi of the Great Gra
                 });
         }
 
-        public class Targaryen
+        private class Targaryen
         {
             public int Id { get; set; }
             public string Name { get; set; }
@@ -907,7 +925,7 @@ Queen of the Andals and the Rhoynar and the First Men, Khaleesi of the Great Gra
             public List<Dragon> Dragons { get; set; }
         }
 
-        public class Dragon
+        private class Dragon
         {
             public int Id { get; set; }
             public string Name { get; set; }
@@ -915,7 +933,7 @@ Queen of the Andals and the Rhoynar and the First Men, Khaleesi of the Great Gra
             public Targaryen Mother { get; set; }
         }
 
-        public class Details
+        private class Details
         {
             public int Id { get; set; }
             public int? TargaryenId { get; set; }
@@ -924,7 +942,7 @@ Queen of the Andals and the Rhoynar and the First Men, Khaleesi of the Great Gra
         }
 
         // TODO: replace with GearsOfWar context when it's refactored properly
-        public class MyContext963 : DbContext
+        private class MyContext963 : DbContext
         {
             public MyContext963(DbContextOptions options)
                 : base(options)
@@ -985,7 +1003,7 @@ Queen of the Andals and the Rhoynar and the First Men, Khaleesi of the Great Gra
             }
         }
 
-        public class CustomerDetails_1742
+        private class CustomerDetails_1742
         {
             public string FirstName { get; set; }
             public string LastName { get; set; }
@@ -1037,7 +1055,7 @@ Queen of the Andals and the Rhoynar and the First Men, Khaleesi of the Great Gra
             }
         }
 
-        public class MyContext3758 : DbContext
+        private class MyContext3758 : DbContext
         {
             public MyContext3758(DbContextOptions options)
                 : base(options)
@@ -1064,7 +1082,7 @@ Queen of the Andals and the Rhoynar and the First Men, Khaleesi of the Great Gra
             }
         }
 
-        public class Customer3758
+        private class Customer3758
         {
             public int Id { get; set; }
             public string Name { get; set; }
@@ -1075,21 +1093,21 @@ Queen of the Andals and the Rhoynar and the First Men, Khaleesi of the Great Gra
             public MyInvalidCollection3758<Order3758> Orders4 { get; set; }
         }
 
-        public class Order3758
+        private class Order3758
         {
             public int Id { get; set; }
             public string Name { get; set; }
         }
 
-        public class MyGenericCollection3758<TElement> : List<TElement>
+        private class MyGenericCollection3758<TElement> : List<TElement>
         {
         }
 
-        public class MyNonGenericCollection3758 : List<Order3758>
+        private class MyNonGenericCollection3758 : List<Order3758>
         {
         }
 
-        public class MyInvalidCollection3758<TElement> : List<TElement>
+        private class MyInvalidCollection3758<TElement> : List<TElement>
         {
             public MyInvalidCollection3758(int argument)
             {
@@ -1223,7 +1241,7 @@ Queen of the Andals and the Rhoynar and the First Men, Khaleesi of the Great Gra
             }
         }
 
-        public class MyContext3409 : DbContext
+        private class MyContext3409 : DbContext
         {
             public DbSet<Parent3409> Parents { get; set; }
             public DbSet<Child3409> Children { get; set; }
@@ -1245,14 +1263,14 @@ Queen of the Andals and the Rhoynar and the First Men, Khaleesi of the Great Gra
             }
         }
 
-        public interface IParent3409
+        private interface IParent3409
         {
             int Id { get; set; }
 
             ICollection<IChild3409> ChildCollection { get; set; }
         }
 
-        public interface IChild3409
+        private interface IChild3409
         {
             int Id { get; set; }
 
@@ -1264,14 +1282,14 @@ Queen of the Andals and the Rhoynar and the First Men, Khaleesi of the Great Gra
             IChild3409 SelfReferenceBackNavigation { get; set; }
         }
 
-        public class Parent3409 : IParent3409
+        private class Parent3409 : IParent3409
         {
             public int Id { get; set; }
 
             public ICollection<IChild3409> ChildCollection { get; set; }
         }
 
-        public class Child3409 : IChild3409
+        private class Child3409 : IChild3409
         {
             public int Id { get; set; }
 
@@ -1443,7 +1461,12 @@ Queen of the Andals and the Rhoynar and the First Men, Khaleesi of the Great Gra
                                     into RootEntities
                                 from eRootJoined in RootEntities.DefaultIfEmpty()
                                     // ReSharper disable once ConstantNullCoalescingCondition
-                                select new { One = eRootJoined, Two = 2, Coalesce = eRootJoined ?? (eVersion ?? eRootJoined) };
+                                select new
+                                {
+                                    One = eRootJoined,
+                                    Two = 2,
+                                    Coalesce = eRootJoined ?? (eVersion ?? eRootJoined)
+                                };
 
                     var result = query.ToList();
                     Assert.True(result.All(e => e.Coalesce.Children.Count > 0));
@@ -1486,7 +1509,12 @@ Queen of the Andals and the Rhoynar and the First Men, Khaleesi of the Great Gra
                                     on eVersion.RootEntityId equals eRoot.Id
                                     into RootEntities
                                 from eRootJoined in RootEntities.DefaultIfEmpty()
-                                select new { eRootJoined, eVersion, foo = eRootJoined ?? eVersion };
+                                select new
+                                {
+                                    eRootJoined,
+                                    eVersion,
+                                    foo = eRootJoined ?? eVersion
+                                };
 
                     query.ToList();
 
@@ -1522,7 +1550,7 @@ Queen of the Andals and the Rhoynar and the First Men, Khaleesi of the Great Gra
                 });
         }
 
-        public class MyContext3101 : DbContext
+        private class MyContext3101 : DbContext
         {
             public MyContext3101(DbContextOptions options)
                 : base(options)
@@ -1538,7 +1566,7 @@ Queen of the Andals and the Rhoynar and the First Men, Khaleesi of the Great Gra
             }
         }
 
-        public class Entity3101
+        private class Entity3101
         {
             public Entity3101()
             {
@@ -1554,7 +1582,7 @@ Queen of the Andals and the Rhoynar and the First Men, Khaleesi of the Great Gra
             public ICollection<Child3101> Children { get; set; }
         }
 
-        public class Child3101
+        private class Child3101
         {
             public int Id { get; set; }
             public string Name { get; set; }
@@ -1645,7 +1673,7 @@ Queen of the Andals and the Rhoynar and the First Men, Khaleesi of the Great Gra
                 });
         }
 
-        public class ReproContext6986 : DbContext
+        private class ReproContext6986 : DbContext
         {
             public ReproContext6986(DbContextOptions options)
                 : base(options)
@@ -1659,33 +1687,33 @@ Queen of the Andals and the Rhoynar and the First Men, Khaleesi of the Great Gra
             public DbSet<ServiceOperator6986> ServiceOperators { get; set; }
         }
 
-        public class EmployerContact6986 : Contact6986
+        private class EmployerContact6986 : Contact6986
         {
             [Required]
             public Employer6986 Employer6986 { get; set; }
         }
 
-        public class ServiceOperatorContact6986 : Contact6986
+        private class ServiceOperatorContact6986 : Contact6986
         {
             [Required]
             public ServiceOperator6986 ServiceOperator6986 { get; set; }
         }
 
-        public class Contact6986
+        private class Contact6986
         {
             public int Id { get; set; }
             public string UserName { get; set; }
             public bool IsPrimary { get; set; }
         }
 
-        public class Employer6986
+        private class Employer6986
         {
             public int Id { get; set; }
             public string Name { get; set; }
             public List<EmployerContact6986> Contacts { get; set; }
         }
 
-        public class ServiceOperator6986
+        private class ServiceOperator6986
         {
             public int Id { get; set; }
             public List<ServiceOperatorContact6986> Contacts { get; set; }
@@ -1835,7 +1863,7 @@ Queen of the Andals and the Rhoynar and the First Men, Khaleesi of the Great Gra
                 });
         }
 
-        public class MyContext5456 : DbContext
+        private class MyContext5456 : DbContext
         {
             public MyContext5456(DbContextOptions options)
                 : base(options)
@@ -1848,27 +1876,27 @@ Queen of the Andals and the Rhoynar and the First Men, Khaleesi of the Great Gra
             public DbSet<Author5456> Authors { get; set; }
         }
 
-        public class Blog5456
+        private class Blog5456
         {
             public int Id { get; set; }
             public List<Post5456> Posts { get; set; }
             public Author5456 Author { get; set; }
         }
 
-        public class Author5456
+        private class Author5456
         {
             public int Id { get; set; }
             public List<Blog5456> Blogs { get; set; }
         }
 
-        public class Post5456
+        private class Post5456
         {
             public int Id { get; set; }
             public Blog5456 Blog { get; set; }
             public List<Comment5456> Comments { get; set; }
         }
 
-        public class Comment5456
+        private class Comment5456
         {
             public int Id { get; set; }
             public Post5456 Blog { get; set; }
@@ -1961,23 +1989,23 @@ Queen of the Andals and the Rhoynar and the First Men, Khaleesi of the Great Gra
             }
         }
 
-        public class Proposal7312
+        private class Proposal7312
         {
             public int Id { get; set; }
         }
 
-        public class ProposalCustom7312 : Proposal7312
+        private class ProposalCustom7312 : Proposal7312
         {
             public string Name { get; set; }
         }
 
-        public class ProposalLeave7312 : Proposal7312
+        private class ProposalLeave7312 : Proposal7312
         {
             public DateTime LeaveStart { get; set; }
             public virtual ProposalLeaveType7312 LeaveType { get; set; }
         }
 
-        public class ProposalLeaveType7312
+        private class ProposalLeaveType7312
         {
             public int Id { get; set; }
             public ICollection<ProposalLeave7312> ProposalLeaves { get; set; }
@@ -2028,19 +2056,19 @@ Queen of the Andals and the Rhoynar and the First Men, Khaleesi of the Great Gra
             }
         }
 
-        public class Entity8282
+        private class Entity8282
         {
             public int Id { get; set; }
         }
 
-        public class EntityDto8282
+        private class EntityDto8282
         {
             public EntityDto8282(Entity8282 entity)
             {
                 Id = entity.Id;
             }
 
-            public int Id { get; set; }
+            public int Id { get; }
         }
 
         private class MyContext8282 : DbContext
@@ -2146,7 +2174,7 @@ WHERE ([e].[PermissionShort] & CAST(4 AS smallint)) = CAST(4 AS smallint)");
             }
         }
 
-        public class Entity8538
+        private class Entity8538
         {
             public int Id { get; set; }
             public Permission Permission { get; set; }
@@ -2156,7 +2184,7 @@ WHERE ([e].[PermissionShort] & CAST(4 AS smallint)) = CAST(4 AS smallint)");
 
         [Flags]
 #pragma warning disable CA2217 // Do not mark enums with FlagsAttribute
-        public enum PermissionByte : byte
+        private enum PermissionByte : byte
 #pragma warning restore CA2217 // Do not mark enums with FlagsAttribute
         {
             NONE = 1,
@@ -2166,7 +2194,7 @@ WHERE ([e].[PermissionShort] & CAST(4 AS smallint)) = CAST(4 AS smallint)");
 
         [Flags]
 #pragma warning disable CA2217 // Do not mark enums with FlagsAttribute
-        public enum PermissionShort : short
+        private enum PermissionShort : short
 #pragma warning restore CA2217 // Do not mark enums with FlagsAttribute
         {
             NONE = 1,
@@ -2176,7 +2204,7 @@ WHERE ([e].[PermissionShort] & CAST(4 AS smallint)) = CAST(4 AS smallint)");
 
         [Flags]
 #pragma warning disable CA2217 // Do not mark enums with FlagsAttribute
-        public enum Permission : long
+        private enum Permission : long
 #pragma warning restore CA2217 // Do not mark enums with FlagsAttribute
         {
             NONE = 0x01,
@@ -2241,24 +2269,24 @@ WHERE ([e].[PermissionShort] & CAST(4 AS smallint)) = CAST(4 AS smallint)");
 
                     var id = 1;
                     context.Entities.Where(c => c.Id == id).ToList();
-                    Assert.Equal(1, context.Cache.Count);
+                    Assert.Equal(2, context.Cache.Count);
 
                     id = 2;
                     context.Entities.Where(c => c.Id == id).ToList();
-                    Assert.Equal(1, context.Cache.Count);
+                    Assert.Equal(2, context.Cache.Count);
 
                     AssertSql(
                         @"@__id_0='1'
 
 SELECT [e].[Id], [e].[Name]
 FROM [Entities] AS [e]
-WHERE ([e].[Id] = @__id_0) AND @__id_0 IS NOT NULL",
+WHERE [e].[Id] = @__id_0",
                         //
                         @"@__id_0='2'
 
 SELECT [e].[Id], [e].[Name]
 FROM [Entities] AS [e]
-WHERE ([e].[Id] = @__id_0) AND @__id_0 IS NOT NULL");
+WHERE [e].[Id] = @__id_0");
                 }
             }
         }
@@ -2278,24 +2306,24 @@ WHERE ([e].[Id] = @__id_0) AND @__id_0 IS NOT NULL");
 
                     id = 1;
                     context.Entities.Where(whereExpression).ToList();
-                    Assert.Equal(1, context.Cache.Count);
+                    Assert.Equal(2, context.Cache.Count);
 
                     id = 2;
                     context.Entities.Where(whereExpression).ToList();
-                    Assert.Equal(1, context.Cache.Count);
+                    Assert.Equal(2, context.Cache.Count);
 
                     AssertSql(
                         @"@__id_0='1'
 
 SELECT [e].[Id], [e].[Name]
 FROM [Entities] AS [e]
-WHERE ([e].[Id] = @__id_0) AND @__id_0 IS NOT NULL",
+WHERE [e].[Id] = @__id_0",
                         //
                         @"@__id_0='2'
 
 SELECT [e].[Id], [e].[Name]
 FROM [Entities] AS [e]
-WHERE ([e].[Id] = @__id_0) AND @__id_0 IS NOT NULL");
+WHERE [e].[Id] = @__id_0");
                 }
             }
         }
@@ -2317,11 +2345,11 @@ WHERE ([e].[Id] = @__id_0) AND @__id_0 IS NOT NULL");
 
                     id = 1;
                     context.Entities.Where(containsExpression).ToList();
-                    Assert.Equal(1, context.Cache.Count);
+                    Assert.Equal(2, context.Cache.Count);
 
                     id = 2;
                     context.Entities.Where(containsExpression).ToList();
-                    Assert.Equal(1, context.Cache.Count);
+                    Assert.Equal(2, context.Cache.Count);
 
                     AssertSql(
                         @"@__id_0='1'
@@ -2331,7 +2359,7 @@ FROM [Entities] AS [e]
 WHERE [e].[Id] IN (
     SELECT [e0].[Id]
     FROM [Entities] AS [e0]
-    WHERE ([e0].[Id] = @__id_0) AND @__id_0 IS NOT NULL
+    WHERE [e0].[Id] = @__id_0
 )",
                         //
                         @"@__id_0='2'
@@ -2341,8 +2369,40 @@ FROM [Entities] AS [e]
 WHERE [e].[Id] IN (
     SELECT [e0].[Id]
     FROM [Entities] AS [e0]
-    WHERE ([e0].[Id] = @__id_0) AND @__id_0 IS NOT NULL
+    WHERE [e0].[Id] = @__id_0
 )");
+                }
+            }
+        }
+
+        [ConditionalFact]
+        public virtual void Relational_command_cache_creates_new_entry_when_parameter_nullability_changes()
+        {
+            using (CreateDatabase8909())
+            {
+                using (var context = new MyContext8909(_options))
+                {
+                    context.Cache.Compact(1);
+
+                    var name = "A";
+
+                    context.Entities.Where(e => e.Name == name).ToList();
+                    Assert.Equal(2, context.Cache.Count);
+
+                    name = null;
+                    context.Entities.Where(e => e.Name == name).ToList();
+                    Assert.Equal(3, context.Cache.Count);
+
+                    AssertSql(
+                        @"@__name_0='A' (Size = 4000)
+
+SELECT [e].[Id], [e].[Name]
+FROM [Entities] AS [e]
+WHERE [e].[Name] = @__name_0",
+                        //
+                        @"SELECT [e].[Id], [e].[Name]
+FROM [Entities] AS [e]
+WHERE [e].[Name] IS NULL");
                 }
             }
         }
@@ -2382,7 +2442,7 @@ WHERE [e].[Id] IN (
                 context => ClearLog());
         }
 
-        public class MyContext8909 : DbContext
+        private class MyContext8909 : DbContext
         {
             public MyContext8909(DbContextOptions options)
                 : base(options)
@@ -2404,7 +2464,7 @@ WHERE [e].[Id] IN (
             }
         }
 
-        public class Entity8909
+        private class Entity8909
         {
             public int Id { get; set; }
             public string Name { get; set; }
@@ -2433,18 +2493,16 @@ WHERE [e].[Id] IN (
                         @"SELECT [m].[Id], [m].[Title], [t].[Id], [t].[Details_Info], [t1].[Id], [t1].[Movie9202Id], [t1].[Name], [t1].[Id0], [t1].[Details_Info]
 FROM [Movies] AS [m]
 LEFT JOIN (
-    SELECT [m0].[Id], [m0].[Details_Info], [m1].[Id] AS [Id0]
+    SELECT [m0].[Id], [m0].[Details_Info]
     FROM [Movies] AS [m0]
-    INNER JOIN [Movies] AS [m1] ON [m0].[Id] = [m1].[Id]
     WHERE [m0].[Details_Info] IS NOT NULL
 ) AS [t] ON [m].[Id] = [t].[Id]
 LEFT JOIN (
     SELECT [a].[Id], [a].[Movie9202Id], [a].[Name], [t0].[Id] AS [Id0], [t0].[Details_Info]
     FROM [Actors] AS [a]
     LEFT JOIN (
-        SELECT [a0].[Id], [a0].[Details_Info], [a1].[Id] AS [Id0]
+        SELECT [a0].[Id], [a0].[Details_Info]
         FROM [Actors] AS [a0]
-        INNER JOIN [Actors] AS [a1] ON [a0].[Id] = [a1].[Id]
         WHERE [a0].[Details_Info] IS NOT NULL
     ) AS [t0] ON [a].[Id] = [t0].[Id]
 ) AS [t1] ON [m].[Id] = [t1].[Movie9202Id]
@@ -2472,18 +2530,16 @@ ORDER BY [m].[Id], [t1].[Id]");
                         @"SELECT [m].[Id], [m].[Title], [t].[Id], [t].[Details_Info], [t1].[Id], [t1].[Movie9202Id], [t1].[Name], [t1].[Id0], [t1].[Details_Info]
 FROM [Movies] AS [m]
 LEFT JOIN (
-    SELECT [m0].[Id], [m0].[Details_Info], [m1].[Id] AS [Id0]
+    SELECT [m0].[Id], [m0].[Details_Info]
     FROM [Movies] AS [m0]
-    INNER JOIN [Movies] AS [m1] ON [m0].[Id] = [m1].[Id]
     WHERE [m0].[Details_Info] IS NOT NULL
 ) AS [t] ON [m].[Id] = [t].[Id]
 LEFT JOIN (
     SELECT [a].[Id], [a].[Movie9202Id], [a].[Name], [t0].[Id] AS [Id0], [t0].[Details_Info]
     FROM [Actors] AS [a]
     LEFT JOIN (
-        SELECT [a0].[Id], [a0].[Details_Info], [a1].[Id] AS [Id0]
+        SELECT [a0].[Id], [a0].[Details_Info]
         FROM [Actors] AS [a0]
-        INNER JOIN [Actors] AS [a1] ON [a0].[Id] = [a1].[Id]
         WHERE [a0].[Details_Info] IS NOT NULL
     ) AS [t0] ON [a].[Id] = [t0].[Id]
 ) AS [t1] ON [m].[Id] = [t1].[Movie9202Id]
@@ -2504,7 +2560,12 @@ ORDER BY [m].[Id], [t1].[Id]");
                     var em = new Movie9202
                     {
                         Title = "Ex Machina",
-                        Cast = new List<Actor9202> { av, oi, dg },
+                        Cast = new List<Actor9202>
+                        {
+                            av,
+                            oi,
+                            dg
+                        },
                         Details = new Details9202 { Info = "Best movie ever made" }
                     };
                     context.Actors.AddRange(av, oi, dg);
@@ -2515,7 +2576,7 @@ ORDER BY [m].[Id], [t1].[Id]");
                 });
         }
 
-        public class MyContext9202 : DbContext
+        private class MyContext9202 : DbContext
         {
             public MyContext9202(DbContextOptions options)
                 : base(options)
@@ -2533,7 +2594,7 @@ ORDER BY [m].[Id], [t1].[Id]");
             }
         }
 
-        public class Movie9202
+        private class Movie9202
         {
             public int Id { get; set; }
             public string Title { get; set; }
@@ -2543,14 +2604,14 @@ ORDER BY [m].[Id], [t1].[Id]");
             public Details9202 Details { get; set; }
         }
 
-        public class Actor9202
+        private class Actor9202
         {
             public int Id { get; set; }
             public string Name { get; set; }
             public Details9202 Details { get; set; }
         }
 
-        public class Details9202
+        private class Details9202
         {
             public string Info { get; set; }
         }
@@ -2629,10 +2690,11 @@ WHERE [w].[Val] = 1");
                 });
         }
 
-        public class MyContext9214 : DbContext
+        private class MyContext9214 : DbContext
         {
             public DbSet<Widget9214> Widgets { get; set; }
 
+#pragma warning disable IDE0060 // Remove unused parameter
             public static int AddOne(int num)
             {
                 throw new Exception();
@@ -2647,6 +2709,7 @@ WHERE [w].[Val] = 1");
             {
                 throw new Exception();
             }
+#pragma warning restore IDE0060 // Remove unused parameter
 
             public MyContext9214(DbContextOptions options)
                 : base(options)
@@ -2664,7 +2727,7 @@ WHERE [w].[Val] = 1");
             }
         }
 
-        public class Widget9214
+        private class Widget9214
         {
             public int Id { get; set; }
             public int Val { get; set; }
@@ -2737,7 +2800,7 @@ BEGIN
                 });
         }
 
-        public class MyContext9277 : DbContext
+        private class MyContext9277 : DbContext
         {
             public MyContext9277(DbContextOptions options)
                 : base(options)
@@ -2747,7 +2810,7 @@ BEGIN
             public DbSet<Blog9277> Blogs { get; set; }
         }
 
-        public class Blog9277
+        private class Blog9277
         {
             public int Id { get; set; }
             public int SomeValue { get; set; }
@@ -2796,7 +2859,7 @@ BEGIN
             }
         }
 
-        public abstract class Person9038
+        private abstract class Person9038
         {
             public int Id { get; set; }
 
@@ -2807,19 +2870,19 @@ BEGIN
             public PersonFamily9038 Family { get; set; }
         }
 
-        public class PersonKid9038 : Person9038
+        private class PersonKid9038 : Person9038
         {
             public int Grade { get; set; }
 
             public PersonTeacher9038 Teacher { get; set; }
         }
 
-        public class PersonTeacher9038 : Person9038
+        private class PersonTeacher9038 : Person9038
         {
             public ICollection<PersonKid9038> Students { get; set; }
         }
 
-        public class PersonFamily9038
+        private class PersonFamily9038
         {
             public int Id { get; set; }
 
@@ -2828,7 +2891,7 @@ BEGIN
             public ICollection<Person9038> Members { get; set; }
         }
 
-        public class MyContext9038 : DbContext
+        private class MyContext9038 : DbContext
         {
             public MyContext9038(DbContextOptions options)
                 : base(options)
@@ -2878,8 +2941,19 @@ BEGIN
                     };
                     var students = new List<PersonKid9038>
                     {
-                        new PersonKid9038 { Name = "Arnold", Grade = 2, Teacher = teachers[0] },
-                        new PersonKid9038 { Name = "Eric", Grade = 4, Teacher = teachers[1], Family = famalies[1] }
+                        new PersonKid9038
+                        {
+                            Name = "Arnold",
+                            Grade = 2,
+                            Teacher = teachers[0]
+                        },
+                        new PersonKid9038
+                        {
+                            Name = "Eric",
+                            Grade = 4,
+                            Teacher = teachers[1],
+                            Family = famalies[1]
+                        }
                     };
 
                     context.People.AddRange(teachers);
@@ -2940,13 +3014,13 @@ ORDER BY [t].[c], [t].[c0], [t].[Id], [t].[Id0], [o].[Id]");
             }
         }
 
-        public class Address9735
+        private class Address9735
         {
             public int Id { get; set; }
             public string Name { get; set; }
         }
 
-        public class Customer9735
+        private class Customer9735
         {
             public int Id { get; set; }
             public string Name { get; set; }
@@ -2956,7 +3030,7 @@ ORDER BY [t].[c], [t].[c0], [t].[Id], [t].[Id0], [o].[Id]");
             public virtual CustomerDetails9735 CustomerDetails { get; set; }
         }
 
-        public class Order9735
+        private class Order9735
         {
             public int Id { get; set; }
             public string Name { get; set; }
@@ -2964,13 +3038,13 @@ ORDER BY [t].[c], [t].[c0], [t].[Id], [t].[Id0], [o].[Id]");
             public virtual Customer9735 Customer { get; set; }
         }
 
-        public class CustomerDetails9735
+        private class CustomerDetails9735
         {
             public int Id { get; set; }
             public string Name { get; set; }
         }
 
-        public class MyContext9735 : DbContext
+        private class MyContext9735 : DbContext
         {
             public MyContext9735(DbContextOptions options)
                 : base(options)
@@ -3013,7 +3087,12 @@ ORDER BY [t].[c], [t].[c0], [t].[Id], [t].[Id0], [o].[Id]");
                                 from x in context.Children
                                 select new { x.ParentId, OtherParent = x.OtherParent.Name })
                             on p.Id equals c.ParentId into child
-                        select new { ParentId = p.Id, ParentName = p.Name, Children = child.Select(c => c.OtherParent) }).ToList();
+                        select new
+                        {
+                            ParentId = p.Id,
+                            ParentName = p.Name,
+                            Children = child.Select(c => c.OtherParent)
+                        }).ToList();
 
                     Assert.Equal(3, results.Count);
                     Assert.Single(results.Where(t => !t.Children.Any()));
@@ -3056,7 +3135,7 @@ ORDER BY [t].[c], [t].[c0], [t].[Id], [t].[Id0], [o].[Id]");
                 });
         }
 
-        public class MyContext9892 : DbContext
+        private class MyContext9892 : DbContext
         {
             public MyContext9892(DbContextOptions options)
                 : base(options)
@@ -3068,20 +3147,20 @@ ORDER BY [t].[c], [t].[c0], [t].[Id], [t].[Id0], [o].[Id]");
             public DbSet<OtherParent9892> OtherParents { get; set; }
         }
 
-        public class Parent9892
+        private class Parent9892
         {
             public int Id { get; set; }
             public string Name { get; set; }
             public List<Child9892> Children { get; set; }
         }
 
-        public class OtherParent9892
+        private class OtherParent9892
         {
             public int Id { get; set; }
             public string Name { get; set; }
         }
 
-        public class Child9892
+        private class Child9892
         {
             public int Id { get; set; }
             public int ParentId { get; set; }
@@ -3140,7 +3219,7 @@ LEFT JOIN [Configuration9468] AS [c0] ON [c].[ConfigurationId] = [c0].[Id]");
                 });
         }
 
-        public class MyContext9468 : DbContext
+        private class MyContext9468 : DbContext
         {
             public MyContext9468(DbContextOptions options)
                 : base(options)
@@ -3150,14 +3229,14 @@ LEFT JOIN [Configuration9468] AS [c0] ON [c].[ConfigurationId] = [c0].[Id]");
             public DbSet<Cart9468> Carts { get; set; }
         }
 
-        public class Cart9468
+        private class Cart9468
         {
             public int Id { get; set; }
             public int? ConfigurationId { get; set; }
             public Configuration9468 Configuration { get; set; }
         }
 
-        public class Configuration9468
+        private class Configuration9468
         {
             public int Id { get; set; }
             public bool Processed { get; set; }
@@ -3174,7 +3253,7 @@ LEFT JOIN [Configuration9468] AS [c0] ON [c].[ConfigurationId] = [c0].[Id]");
             {
                 using (var context = new MyContext10635(_options))
                 {
-                    var query = context.Parents.Include(p => p.Children).OrderBy(p => ((IEntity10635)p).Id).ToList();
+                    var query = context.Parents.Include(p => p.Children).OrderBy(p => p.Id).ToList();
 
                     AssertSql(
                         @"SELECT [p].[Id], [p].[Name], [c].[Id], [c].[Name], [c].[Parent10635Id], [c].[ParentId]
@@ -3192,7 +3271,7 @@ ORDER BY [p].[Id], [c].[Id]");
             {
                 using (var context = new MyContext10635(_options))
                 {
-                    var query = context.Parents.OrderBy(p => ((IEntity10635)p).Id).Select(p => p.Children.ToList()).ToList();
+                    var query = context.Parents.OrderBy(p => p.Id).Select(p => p.Children.ToList()).ToList();
 
                     AssertSql(
                         @"SELECT [p].[Id], [c].[Id], [c].[Name], [c].[Parent10635Id], [c].[ParentId]
@@ -3224,7 +3303,7 @@ ORDER BY [p].[Id], [c].[Id]");
                 });
         }
 
-        public class MyContext10635 : DbContext
+        private class MyContext10635 : DbContext
         {
             public MyContext10635(DbContextOptions options)
                 : base(options)
@@ -3235,19 +3314,19 @@ ORDER BY [p].[Id], [c].[Id]");
             public DbSet<Child10635> Children { get; set; }
         }
 
-        public interface IEntity10635
+        private interface IEntity10635
         {
             int Id { get; set; }
         }
 
-        public class Parent10635 : IEntity10635
+        private class Parent10635 : IEntity10635
         {
             public int Id { get; set; }
             public string Name { get; set; }
             public virtual ICollection<Child10635> Children { get; set; }
         }
 
-        public class Child10635 : IEntity10635
+        private class Child10635 : IEntity10635
         {
             public int Id { get; set; }
             public string Name { get; set; }
@@ -3301,7 +3380,7 @@ WHERE ([t0].[__RowNumber__] > @__p_0) AND ([t0].[__RowNumber__] <= (@__p_0 + @__
             }
         }
 
-        public class MyContext10168 : DbContext
+        private class MyContext10168 : DbContext
         {
             private readonly ILoggerFactory _loggerFactory;
 
@@ -3319,7 +3398,9 @@ WHERE ([t0].[__RowNumber__] > @__p_0) AND ([t0].[__RowNumber__] <= (@__p_0 + @__
                     .EnableServiceProviderCaching(false)
                     .UseSqlServer(
                         SqlServerTestStore.CreateConnectionString("RowNumberPaging_Owned"),
+#pragma warning disable 618
                         b => b.UseRowNumberForPaging());
+#pragma warning restore 618
             }
 
             protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -3328,7 +3409,7 @@ WHERE ([t0].[__RowNumber__] > @__p_0) AND ([t0].[__RowNumber__] <= (@__p_0 + @__
             }
         }
 
-        public class Note
+        private class Note
         {
             [Key]
             public Guid Id { get; set; }
@@ -3337,7 +3418,7 @@ WHERE ([t0].[__RowNumber__] > @__p_0) AND ([t0].[__RowNumber__] <= (@__p_0 + @__
             public User10168 User { get; set; }
         }
 
-        public class User10168
+        private class User10168
         {
             public Guid Id { get; set; }
             public string Fullname { get; set; }
@@ -3403,7 +3484,7 @@ WHERE [e].[SomeValue] = @__ef_filter__Tenant_0");
                 });
         }
 
-        public class FilterContextBase10301 : DbContext
+        private class FilterContextBase10301 : DbContext
         {
             public int Tenant { get; set; }
 
@@ -3420,13 +3501,13 @@ WHERE [e].[SomeValue] = @__ef_filter__Tenant_0");
             }
         }
 
-        public class Blog10301
+        private class Blog10301
         {
             public int Id { get; set; }
             public int SomeValue { get; set; }
         }
 
-        public class FilterContext10301 : FilterContextBase10301
+        private class FilterContext10301 : FilterContextBase10301
         {
             public FilterContext10301(DbContextOptions options)
                 : base(options)
@@ -3474,7 +3555,7 @@ WHERE [b].[IsTwo] IN (CAST(0 AS bit), CAST(1 AS bit))");
                 });
         }
 
-        public class MyContext11104 : DbContext
+        private class MyContext11104 : DbContext
         {
             public DbSet<Base> Bases { get; set; }
 
@@ -3492,22 +3573,22 @@ WHERE [b].[IsTwo] IN (CAST(0 AS bit), CAST(1 AS bit))");
             }
         }
 
-        public abstract class Base
+        private abstract class Base
         {
             public int Id { get; set; }
             public bool IsTwo { get; set; }
         }
 
-        public class Derived1 : Base
+        private class Derived1 : Base
         {
             public Stuff MoreStuff { get; set; }
         }
 
-        public class Derived2 : Base
+        private class Derived2 : Base
         {
         }
 
-        public class Stuff
+        private class Stuff
         {
             public int Id { get; set; }
         }
@@ -3628,7 +3709,7 @@ GROUP BY [t2].[Name], [t5].[MaumarEntity11818_Name]");
                 });
         }
 
-        public class MyContext11818 : DbContext
+        private class MyContext11818 : DbContext
         {
             public MyContext11818(DbContextOptions options)
                 : base(options)
@@ -3653,19 +3734,19 @@ GROUP BY [t2].[Name], [t5].[MaumarEntity11818_Name]");
             }
         }
 
-        public class Entity11818
+        private class Entity11818
         {
             public int Id { get; set; }
             public string Name { get; set; }
         }
 
-        public class AnotherEntity11818
+        private class AnotherEntity11818
         {
             public int Id { get; set; }
             public string Name { get; set; }
         }
 
-        public class MaumarEntity11818
+        private class MaumarEntity11818
         {
             public int Id { get; set; }
             public string Name { get; set; }
@@ -3742,7 +3823,7 @@ WHERE ([t].[Name] <> N'Bar') OR [t].[Name] IS NULL");
                 });
         }
 
-        public class MyContext11803 : DbContext
+        private class MyContext11803 : DbContext
         {
             public DbSet<Faction> Factions { get; set; }
             public DbSet<Leader> Leaders { get; set; }
@@ -3778,7 +3859,7 @@ WHERE ([t].[Name] <> N'Bar') OR [t].[Name] IS NULL");
             }
         }
 
-        public class Faction
+        private class Faction
         {
             public int Id { get; set; }
             public string Name { get; set; }
@@ -3786,19 +3867,19 @@ WHERE ([t].[Name] <> N'Bar') OR [t].[Name] IS NULL");
             public List<Leader> Leaders { get; set; }
         }
 
-        public class Leader
+        private class Leader
         {
             public int Id { get; set; }
             public string Name { get; set; }
             public Faction Faction { get; set; }
         }
 
-        public class FactionQuery
+        private class FactionQuery
         {
             public string Name { get; set; }
         }
 
-        public class LeaderQuery
+        private class LeaderQuery
         {
             public string Name { get; set; }
         }
@@ -3807,7 +3888,9 @@ WHERE ([t].[Name] <> N'Bar') OR [t].[Name] IS NULL");
 
         #region Bug11923
 
-        public static bool ClientMethod11923(int id) => true;
+#pragma warning disable IDE0060 // Remove unused parameter
+        private static bool ClientMethod11923(int id) => true;
+#pragma warning restore IDE0060 // Remove unused parameter
 
         [ConditionalFact(Skip = "Issue #17244")]
         public virtual void Collection_without_setter_materialized_correctly()
@@ -3818,7 +3901,12 @@ WHERE ([t].[Name] <> N'Bar') OR [t].[Name] IS NULL");
                 {
                     var query1 = context.Blogs
                         .Select(
-                            b => new { Collection1 = b.Posts1, Collection2 = b.Posts2, Collection3 = b.Posts3 }).ToList();
+                            b => new
+                            {
+                                Collection1 = b.Posts1,
+                                Collection2 = b.Posts2,
+                                Collection3 = b.Posts3
+                            }).ToList();
 
                     var query2 = context.Blogs
                         .Select(
@@ -3841,7 +3929,12 @@ WHERE ([t].[Name] <> N'Bar') OR [t].[Name] IS NULL");
                     var query4 = context.Blogs
                         .Where(b => ClientMethod11923(b.Id))
                         .Select(
-                            b => new { Collection1 = b.Posts1, Collection2 = b.Posts2, Collection3 = b.Posts3 }).ToList();
+                            b => new
+                            {
+                                Collection1 = b.Posts1,
+                                Collection2 = b.Posts2,
+                                Collection3 = b.Posts3
+                            }).ToList();
 
                     var query5 = context.Blogs
                         .Where(b => ClientMethod11923(b.Id))
@@ -3905,7 +3998,7 @@ WHERE ([t].[Name] <> N'Bar') OR [t].[Name] IS NULL");
                 });
         }
 
-        public class MyContext11923 : DbContext
+        private class MyContext11923 : DbContext
         {
             public DbSet<Blog11923> Blogs { get; set; }
             public DbSet<Post11923> Posts { get; set; }
@@ -3930,7 +4023,7 @@ WHERE ([t].[Name] <> N'Bar') OR [t].[Name] IS NULL");
             }
         }
 
-        public class Blog11923
+        private class Blog11923
         {
             public Blog11923()
             {
@@ -3954,7 +4047,7 @@ WHERE ([t].[Name] <> N'Bar') OR [t].[Name] IS NULL");
             public HashSet<Post11923> Posts3 { get; }
         }
 
-        public class Post11923
+        private class Post11923
         {
             public int Id { get; set; }
             public string Name { get; set; }
@@ -3962,12 +4055,12 @@ WHERE ([t].[Name] <> N'Bar') OR [t].[Name] IS NULL");
             public List<Comment11923> Comments { get; set; }
         }
 
-        public class Comment11923
+        private class Comment11923
         {
             public int Id { get; set; }
         }
 
-        public class CustomCollection11923 : List<Post11923>
+        private class CustomCollection11923 : List<Post11923>
         {
         }
 
@@ -4081,7 +4174,7 @@ FROM [Prices] AS [p]");
                 });
         }
 
-        public class MyContext11885 : DbContext
+        private class MyContext11885 : DbContext
         {
             public DbSet<Price11885> Prices { get; set; }
 
@@ -4102,7 +4195,7 @@ FROM [Prices] AS [p]");
             }
         }
 
-        public class Price11885
+        private class Price11885
         {
             public int Id { get; set; }
             public int IntColumn { get; set; }
@@ -4178,24 +4271,24 @@ FROM [Prices] AS [p]");
                 });
         }
 
-        public interface IEmployee12582
+        private interface IEmployee12582
         {
             string Name { get; set; }
         }
 
-        public class Employee12582 : IEmployee12582
+        private class Employee12582 : IEmployee12582
         {
             public int Id { get; set; }
             public string Name { get; set; }
             public ICollection<EmployeeDevice12582> Devices { get; set; }
         }
 
-        public interface IEmployeeDevice12582
+        private interface IEmployeeDevice12582
         {
             string Device { get; set; }
         }
 
-        public class EmployeeDevice12582 : IEmployeeDevice12582
+        private class EmployeeDevice12582 : IEmployeeDevice12582
         {
             public int Id { get; set; }
             public int EmployeeId { get; set; }
@@ -4203,7 +4296,7 @@ FROM [Prices] AS [p]");
             public Employee12582 Employee { get; set; }
         }
 
-        public class MyContext12582 : DbContext
+        private class MyContext12582 : DbContext
         {
             public DbSet<Employee12582> Employees { get; set; }
             public DbSet<EmployeeDevice12582> Devices { get; set; }
@@ -4251,7 +4344,7 @@ FROM [Prices] AS [p]");
                 });
         }
 
-        public class MyContext12748 : DbContext
+        private class MyContext12748 : DbContext
         {
             public DbSet<Blog12748> Blogs { get; set; }
             public DbSet<Comment12748> Comments { get; set; }
@@ -4266,7 +4359,7 @@ FROM [Prices] AS [p]");
             }
         }
 
-        public class Blog12748
+        private class Blog12748
         {
             [Key]
             public byte[] Name { get; set; }
@@ -4274,7 +4367,7 @@ FROM [Prices] AS [p]");
             public List<Comment12748> Comments { get; set; }
         }
 
-        public class Comment12748
+        private class Comment12748
         {
             public int Id { get; set; }
             public byte[] BlogName { get; set; }
@@ -4301,7 +4394,7 @@ FROM [Prices] AS [p]");
             }
         }
 
-        public class Holder13025
+        private class Holder13025
         {
             public string Name { get; set; }
             public int? DeviceId { get; set; }
@@ -4325,7 +4418,7 @@ FROM [Prices] AS [p]");
                 });
         }
 
-        public class MyContext13025 : DbContext
+        private class MyContext13025 : DbContext
         {
             public DbSet<Employee13025> Employees { get; set; }
             public DbSet<EmployeeDevice13025> EmployeeDevices { get; set; }
@@ -4340,14 +4433,14 @@ FROM [Prices] AS [p]");
             }
         }
 
-        public class Employee13025
+        private class Employee13025
         {
             public int Id { get; set; }
             public string Name { get; set; }
             public ICollection<EmployeeDevice13025> Devices { get; set; }
         }
 
-        public class EmployeeDevice13025
+        private class EmployeeDevice13025
         {
             public int Id { get; set; }
             public short DeviceId { get; set; }
@@ -4383,7 +4476,7 @@ FROM [Prices] AS [p]");
                 });
         }
 
-        public class MyContext12170 : DbContext
+        private class MyContext12170 : DbContext
         {
             public virtual DbSet<Definition12170> Definitions { get; set; }
             public virtual DbSet<DefinitionHistory12170> DefinitionHistories { get; set; }
@@ -4404,18 +4497,18 @@ FROM [Prices] AS [p]");
         }
 
         [Owned]
-        public class OptionalChangePoint12170
+        private class OptionalChangePoint12170
         {
             public DateTime? Timestamp { get; set; }
         }
 
         [Owned]
-        public class MasterChangeInfo12170
+        private class MasterChangeInfo12170
         {
             public virtual OptionalChangePoint12170 RemovedPoint { get; set; }
         }
 
-        public class DefinitionHistory12170
+        private class DefinitionHistory12170
         {
             public int Id { get; set; }
             public int MacGuffinDefinitionID { get; set; }
@@ -4423,7 +4516,7 @@ FROM [Prices] AS [p]");
             public OptionalChangePoint12170 EndedPoint { get; set; }
         }
 
-        public class Definition12170
+        private class Definition12170
         {
             public int Id { get; set; }
             public virtual MasterChangeInfo12170 ChangeInfo { get; set; }
@@ -4489,7 +4582,7 @@ FROM [Prices] AS [p]");
                 });
         }
 
-        public class MyContext11944 : DbContext
+        private class MyContext11944 : DbContext
         {
             public DbSet<Student11944> Students { get; set; }
             public DbSet<School11944> Schools { get; set; }
@@ -4506,23 +4599,23 @@ FROM [Prices] AS [p]");
             }
         }
 
-        public class Student11944
+        private class Student11944
         {
             public int Id { get; set; }
             public ElementarySchool11944 School { get; set; }
         }
 
-        public class School11944
+        private class School11944
         {
             public int Id { get; set; }
         }
 
-        public abstract class PrimarySchool11944 : School11944
+        private abstract class PrimarySchool11944 : School11944
         {
             public List<Student11944> Students { get; set; }
         }
 
-        public class ElementarySchool11944 : PrimarySchool11944
+        private class ElementarySchool11944 : PrimarySchool11944
         {
         }
 
@@ -4567,7 +4660,7 @@ WHERE [r].[MyTime] IN ('2018-10-07T00:00:00')");
                 });
         }
 
-        public class MyContext13118 : DbContext
+        private class MyContext13118 : DbContext
         {
             public virtual DbSet<ReproEntity13118> ReproEntity { get; set; }
 
@@ -4582,7 +4675,7 @@ WHERE [r].[MyTime] IN ('2018-10-07T00:00:00')");
             }
         }
 
-        public class ReproEntity13118
+        private class ReproEntity13118
         {
             public Guid Id { get; set; }
             public DateTime MyTime { get; set; }
@@ -4695,9 +4788,8 @@ LEFT JOIN (
     END AS [c], [t].[Turnovers_AmountIn], [a].[Id], [a].[Partner13157Id]
     FROM [Address13157] AS [a]
     LEFT JOIN (
-        SELECT [a0].[Id], [a0].[Turnovers_AmountIn], [a1].[Id] AS [Id0]
+        SELECT [a0].[Id], [a0].[Turnovers_AmountIn]
         FROM [Address13157] AS [a0]
-        INNER JOIN [Address13157] AS [a1] ON [a0].[Id] = [a1].[Id]
         WHERE [a0].[Turnovers_AmountIn] IS NOT NULL
     ) AS [t] ON [a].[Id] = [t].[Id]
 ) AS [t0] ON [p].[Id] = [t0].[Partner13157Id]
@@ -4727,7 +4819,7 @@ ORDER BY [p].[Id], [t0].[Id]");
                 });
         }
 
-        public class MyContext13157 : DbContext
+        private class MyContext13157 : DbContext
         {
             public virtual DbSet<Partner13157> Partners { get; set; }
 
@@ -4742,19 +4834,19 @@ ORDER BY [p].[Id], [t0].[Id]");
             }
         }
 
-        public class Partner13157
+        private class Partner13157
         {
             public int Id { get; set; }
             public ICollection<Address13157> Addresses { get; set; }
         }
 
-        public class Address13157
+        private class Address13157
         {
             public int Id { get; set; }
             public AddressTurnovers13157 Turnovers { get; set; }
         }
 
-        public class AddressTurnovers13157
+        private class AddressTurnovers13157
         {
             public int AmountIn { get; set; }
         }
@@ -4798,7 +4890,7 @@ ORDER BY [p].[Id], [t0].[Id]");
                 });
         }
 
-        public class MyContext13346 : DbContext
+        private class MyContext13346 : DbContext
         {
             public virtual DbSet<Order13346> Orders { get; set; }
 
@@ -4817,13 +4909,13 @@ ORDER BY [p].[Id], [t0].[Id]");
             }
         }
 
-        public class Order13346
+        private class Order13346
         {
             public int Id { get; set; }
             public int Amount { get; set; }
         }
 
-        public class OrderSummary13346
+        private class OrderSummary13346
         {
             public int Amount { get; set; }
         }
@@ -4862,7 +4954,7 @@ WHERE @@ROWCOUNT = 1 AND [Id] = scope_identity();");
                 context => ClearLog());
         }
 
-        public class MyContext13079 : DbContext
+        private class MyContext13079 : DbContext
         {
             public virtual DbSet<BaseEntity13079> BaseEntities { get; set; }
 
@@ -4877,24 +4969,24 @@ WHERE @@ROWCOUNT = 1 AND [Id] = scope_identity();");
             }
         }
 
-        public class BaseEntity13079
+        private class BaseEntity13079
         {
             public int Id { get; set; }
         }
 
-        public class DerivedEntity13079 : BaseEntity13079
+        private class DerivedEntity13079 : BaseEntity13079
         {
             public int Property { get; set; }
             public OwnedData13079 Data { get; set; }
         }
 
-        public class OwnedData13079
+        private class OwnedData13079
         {
             public int Property { get; set; }
             public OwnedSubData13079 SubData { get; set; }
         }
 
-        public class OwnedSubData13079
+        private class OwnedSubData13079
         {
             public int Property { get; set; }
         }
@@ -4934,7 +5026,7 @@ FROM [InventoryPools] AS [i]");
                 });
         }
 
-        public class MyContext13587 : DbContext
+        private class MyContext13587 : DbContext
         {
             public virtual DbSet<InventoryPool13587> InventoryPools { get; set; }
 
@@ -4944,7 +5036,7 @@ FROM [InventoryPools] AS [i]");
             }
         }
 
-        public class InventoryPool13587
+        private class InventoryPool13587
         {
             public int Id { get; set; }
             public double Quantity { get; set; }
@@ -4984,7 +5076,7 @@ LEFT JOIN [Children] AS [c] ON [p].[ChildId] = [c].[Id]");
                 });
         }
 
-        public class MyContext12518 : DbContext
+        private class MyContext12518 : DbContext
         {
             public virtual DbSet<Parent12518> Parents { get; set; }
             public virtual DbSet<Child12518> Children { get; set; }
@@ -5010,14 +5102,14 @@ LEFT JOIN [Children] AS [c] ON [p].[ChildId] = [c].[Id]");
             }
         }
 
-        public class Parent12518
+        private class Parent12518
         {
             public Guid Id { get; set; } = Guid.NewGuid();
             public Guid? ChildId { get; set; }
             public Child12518 Child { get; set; }
         }
 
-        public class Child12518
+        private class Child12518
         {
             public Guid Id { get; set; } = Guid.NewGuid();
             public ulong ULongRowVersion { get; set; }
@@ -5058,7 +5150,7 @@ LEFT JOIN [Children] AS [c] ON [p].[ChildId] = [c].[Id]");
         private SqlServerTestStore CreateDatabase12549()
             => CreateTestStore(() => new MyContext12549(_options), context => { });
 
-        public class MyContext12549 : DbContext
+        private class MyContext12549 : DbContext
         {
             public DbSet<Table1_12549> Table1 { get; set; }
             public DbSet<Table2_12549> Table2 { get; set; }
@@ -5069,12 +5161,12 @@ LEFT JOIN [Children] AS [c] ON [p].[ChildId] = [c].[Id]");
             }
         }
 
-        public class Table1_12549
+        private class Table1_12549
         {
             public int Id { get; set; }
         }
 
-        public class Table2_12549
+        private class Table2_12549
         {
             public int Id { get; set; }
         }
@@ -5148,7 +5240,7 @@ ORDER BY [b].[Id]");
                 });
         }
 
-        public class MyContext16233 : DbContext
+        private class MyContext16233 : DbContext
         {
             public virtual DbSet<BaseType16233> Bases { get; set; }
             public virtual DbSet<DerivedType16233> Derived { get; set; }
@@ -5159,17 +5251,17 @@ ORDER BY [b].[Id]");
             }
         }
 
-        public class BaseType16233
+        private class BaseType16233
         {
             public int Id { get; set; }
         }
 
-        public class DerivedType16233 : BaseType16233
+        private class DerivedType16233 : BaseType16233
         {
             public Reference16233 Reference { get; set; }
         }
 
-        public class Reference16233
+        private class Reference16233
         {
             public int Id { get; set; }
             public int DerivedTypeId { get; set; }
@@ -5232,7 +5324,7 @@ LEFT JOIN [Categories] AS [c] ON [p].[CategoryId] = [c].[Id]");
                     ClearLog();
                 });
 
-        public class MyContext15684 : DbContext
+        private class MyContext15684 : DbContext
         {
             public DbSet<Category15684> Categories { get; set; }
             public DbSet<Product15684> Products { get; set; }
@@ -5251,7 +5343,7 @@ LEFT JOIN [Categories] AS [c] ON [p].[CategoryId] = [c].[Id]");
             }
         }
 
-        public class Product15684
+        private class Product15684
         {
             [Key]
             public int Id { get; set; }
@@ -5264,7 +5356,7 @@ LEFT JOIN [Categories] AS [c] ON [p].[CategoryId] = [c].[Id]");
             public Category15684 Category { get; set; }
         }
 
-        public class Category15684
+        private class Category15684
         {
             [Key]
             public int Id { get; set; }
@@ -5275,7 +5367,7 @@ LEFT JOIN [Categories] AS [c] ON [p].[CategoryId] = [c].[Id]");
             public CategoryStatus15684 Status { get; set; }
         }
 
-        public class ProductDto15684
+        private class ProductDto15684
         {
             public string CategoryName { get; set; }
             public CategoryStatus15684 CategoryStatus { get; set; }
@@ -5342,7 +5434,7 @@ FROM [BuildingSet] AS [b]
 INNER JOIN [Builder] AS [b0] ON [b].[BuilderId] = [b0].[Id]
 INNER JOIN [City] AS [c] ON [b0].[CityId] = [c].[Id]
 INNER JOIN [MandatorSet] AS [m] ON [b].[MandatorId] = [m].[Id]
-WHERE ([c].[Name] = N'Leeds') AND [c].[Name] IS NOT NULL");
+WHERE [c].[Name] = N'Leeds'");
                 }
             }
         }
@@ -5362,8 +5454,18 @@ WHERE ([c].[Name] = N'Leeds') AND [c].[Name] IS NOT NULL");
                             Name = "One",
                             Buildings = new List<TBuilding15204>
                             {
-                                new TBuilding15204 { Identity = Guid.NewGuid(), LongName = "One L1", Builder = sam },
-                                new TBuilding15204 { Identity = Guid.NewGuid(), LongName = "One L2", Builder = sam }
+                                new TBuilding15204
+                                {
+                                    Identity = Guid.NewGuid(),
+                                    LongName = "One L1",
+                                    Builder = sam
+                                },
+                                new TBuilding15204
+                                {
+                                    Identity = Guid.NewGuid(),
+                                    LongName = "One L2",
+                                    Builder = sam
+                                }
                             }
                         });
                     context.MandatorSet.Add(
@@ -5393,7 +5495,7 @@ WHERE ([c].[Name] = N'Leeds') AND [c].[Name] IS NOT NULL");
                     ClearLog();
                 });
 
-        public class MyContext15204 : DbContext
+        private class MyContext15204 : DbContext
         {
             public DbSet<TMandator15204> MandatorSet { get; set; }
             public DbSet<TBuilding15204> BuildingSet { get; set; }
@@ -5408,7 +5510,7 @@ WHERE ([c].[Name] = N'Leeds') AND [c].[Name] IS NOT NULL");
             }
         }
 
-        public class TBuilding15204
+        private class TBuilding15204
         {
             public int Id { get; set; }
             public Guid Identity { get; set; }
@@ -5419,7 +5521,7 @@ WHERE ([c].[Name] = N'Leeds') AND [c].[Name] IS NOT NULL");
             public int MandatorId { get; set; }
         }
 
-        public class TBuilder15204
+        private class TBuilder15204
         {
             public int Id { get; set; }
             public string Name { get; set; }
@@ -5427,13 +5529,13 @@ WHERE ([c].[Name] = N'Leeds') AND [c].[Name] IS NOT NULL");
             public TCity15204 City { get; set; }
         }
 
-        public class TCity15204
+        private class TCity15204
         {
             public int Id { get; set; }
             public string Name { get; set; }
         }
 
-        public class TMandator15204
+        private class TMandator15204
         {
             public int Id { get; set; }
             public Guid Identity { get; set; }
@@ -5503,7 +5605,7 @@ WHERE ([c].[Name] = N'Leeds') AND [c].[Name] IS NOT NULL");
                     ClearLog();
                 });
 
-        public class MyContext15518 : DbContext
+        private class MyContext15518 : DbContext
         {
             public DbSet<Repo15518> Repos { get; set; }
 
@@ -5513,7 +5615,7 @@ WHERE ([c].[Name] = N'Leeds') AND [c].[Name] IS NOT NULL");
             }
         }
 
-        public class Repo15518
+        private class Repo15518
         {
             public int Id { get; set; }
             public string Name { get; set; }
@@ -5561,7 +5663,7 @@ WHERE ([c].[Name] = N'Leeds') AND [c].[Name] IS NOT NULL");
                     ClearLog();
                 });
 
-        public class MyContext8864 : DbContext
+        private class MyContext8864 : DbContext
         {
             public DbSet<Customer8864> Customers { get; set; }
 
@@ -5571,7 +5673,7 @@ WHERE ([c].[Name] = N'Leeds') AND [c].[Name] IS NOT NULL");
             }
         }
 
-        public class Customer8864
+        private class Customer8864
         {
             public int Id { get; set; }
             public string Name { get; set; }
@@ -5621,7 +5723,7 @@ FROM [Posts] AS [p]");
                     ClearLog();
                 });
 
-        public class MyContext7983 : DbContext
+        private class MyContext7983 : DbContext
         {
             public DbSet<Blog7983> Blogs { get; set; }
             public DbSet<Post7983> Posts { get; set; }
@@ -5632,7 +5734,7 @@ FROM [Posts] AS [p]");
             }
         }
 
-        public class Blog7983
+        private class Blog7983
         {
             public int Id { get; set; }
             public string Title { get; set; }
@@ -5640,7 +5742,7 @@ FROM [Posts] AS [p]");
             public ICollection<Post7983> Posts { get; set; }
         }
 
-        public class Post7983
+        private class Post7983
         {
             public int Id { get; set; }
             public string Title { get; set; }
@@ -5649,7 +5751,7 @@ FROM [Posts] AS [p]");
             public Blog7983 Blog { get; set; }
         }
 
-        public class PostDTO7983
+        private class PostDTO7983
         {
             public string Title { get; set; }
 
@@ -5707,7 +5809,7 @@ WHERE EXISTS (
             }
         }
 
-        public class MyContext17253 : DbContext
+        private class MyContext17253 : DbContext
         {
             public DbSet<EntityWithQueryFilterSelfReference> EntitiesWithQueryFilterSelfReference { get; set; }
 
@@ -5760,31 +5862,31 @@ WHERE EXISTS (
                     ClearLog();
                 });
 
-        public class EntityWithQueryFilterSelfReference
+        private class EntityWithQueryFilterSelfReference
         {
             public int Id { get; set; }
             public string Name { get; set; }
         }
 
-        public class EntityReferencingEntityWithQueryFilterSelfReference
+        private class EntityReferencingEntityWithQueryFilterSelfReference
         {
             public int Id { get; set; }
             public string Name { get; set; }
         }
 
-        public class EntityWithQueryFilterCycle1
+        private class EntityWithQueryFilterCycle1
         {
             public int Id { get; set; }
             public string Name { get; set; }
         }
 
-        public class EntityWithQueryFilterCycle2
+        private class EntityWithQueryFilterCycle2
         {
             public int Id { get; set; }
             public string Name { get; set; }
         }
 
-        public class EntityWithQueryFilterCycle3
+        private class EntityWithQueryFilterCycle3
         {
             public int Id { get; set; }
             public string Name { get; set; }
@@ -5804,8 +5906,13 @@ WHERE EXISTS (
                     var query = List17276(context.RemovableEntities);
 
                     AssertSql(
-                        @"SELECT [r].[Id], [r].[IsRemoved], [r].[Removed], [r].[RemovedByUser]
+                        @"SELECT [r].[Id], [r].[IsRemoved], [r].[Removed], [r].[RemovedByUser], [t].[Id], [t].[OwnedEntity_OwnedValue]
 FROM [RemovableEntities] AS [r]
+LEFT JOIN (
+    SELECT [r0].[Id], [r0].[OwnedEntity_OwnedValue]
+    FROM [RemovableEntities] AS [r0]
+    WHERE [r0].[OwnedEntity_OwnedValue] IS NOT NULL
+) AS [t] ON [r].[Id] = [t].[Id]
 WHERE [r].[IsRemoved] <> CAST(1 AS bit)");
                 }
             }
@@ -5832,6 +5939,30 @@ WHERE [r].[IsRemoved] = CAST(1 AS bit)");
         }
 
         [ConditionalFact]
+        public virtual void Expression_tree_constructed_via_interface_for_owned_navigation_works_17505()
+        {
+            using (CreateDatabase17276())
+            {
+                using (var context = new MyContext17276(_options))
+                {
+                    var query = context.RemovableEntities
+                        .Where(p => EF.Property<string>(EF.Property<IOwned>(p, "OwnedEntity"), "OwnedValue") == "Abc")
+                        .ToList();
+
+                    AssertSql(
+                        @"SELECT [r].[Id], [r].[IsRemoved], [r].[Removed], [r].[RemovedByUser], [t].[Id], [t].[OwnedEntity_OwnedValue]
+FROM [RemovableEntities] AS [r]
+LEFT JOIN (
+    SELECT [r0].[Id], [r0].[OwnedEntity_OwnedValue]
+    FROM [RemovableEntities] AS [r0]
+    WHERE [r0].[OwnedEntity_OwnedValue] IS NOT NULL
+) AS [t] ON [r].[Id] = [t].[Id]
+WHERE [t].[OwnedEntity_OwnedValue] = N'Abc'");
+                }
+            }
+        }
+
+        [ConditionalFact]
         public virtual void Expression_tree_constructed_via_interface_works_16759()
         {
             using (CreateDatabase17276())
@@ -5846,16 +5977,18 @@ WHERE [r].[IsRemoved] = CAST(1 AS bit)");
 
 SELECT [p].[Id], [p].[RemovableEntityId]
 FROM [Parents] AS [p]
-WHERE ([p].[Id] = @__id_0) AND @__id_0 IS NOT NULL");
+WHERE [p].[Id] = @__id_0");
                 }
             }
         }
 
-        public class MyContext17276 : DbContext
+        private class MyContext17276 : DbContext
         {
             public DbSet<RemovableEntity17276> RemovableEntities { get; set; }
             public DbSet<Parent17276> Parents { get; set; }
-            public MyContext17276(DbContextOptions options) : base(options)
+
+            public MyContext17276(DbContextOptions options)
+                : base(options)
             {
             }
 
@@ -5874,12 +6007,13 @@ WHERE ([p].[Id] = @__id_0) AND @__id_0 IS NOT NULL");
                     ClearLog();
                 });
 
-        public static List<T> List17276<T>(IQueryable<T> query) where T : IRemovable17276
+        private static List<T> List17276<T>(IQueryable<T> query)
+            where T : IRemovable17276
         {
             return query.Where(x => !x.IsRemoved).ToList();
         }
 
-        public interface IRemovable17276
+        private interface IRemovable17276
         {
             bool IsRemoved { get; set; }
 
@@ -5888,26 +6022,38 @@ WHERE ([p].[Id] = @__id_0) AND @__id_0 IS NOT NULL");
             DateTime? Removed { get; set; }
         }
 
-        public class RemovableEntity17276 : IRemovable17276
+        private class RemovableEntity17276 : IRemovable17276
         {
             public int Id { get; set; }
             public bool IsRemoved { get; set; }
             public string RemovedByUser { get; set; }
             public DateTime? Removed { get; set; }
+            public OwnedEntity OwnedEntity { get; set; }
         }
 
-        public class Parent17276 : IHasId17276<int>
+        private class Parent17276 : IHasId17276<int>
         {
             public int Id { get; set; }
             public RemovableEntity17276 RemovableEntity { get; set; }
         }
 
-        public interface IHasId17276<out T>
+        [Owned]
+        private class OwnedEntity : IOwned
+        {
+            public string OwnedValue { get; set; }
+        }
+
+        private interface IHasId17276<out T>
         {
             T Id { get; }
         }
 
-        public class Specification17276<T>
+        private interface IOwned
+        {
+            public string OwnedValue { get; }
+        }
+
+        private class Specification17276<T>
             where T : IHasId17276<int>
         {
             public Expression<Func<T, bool>> Criteria { get; }
@@ -5935,7 +6081,7 @@ WHERE ([p].[Id] = @__id_0) AND @__id_0 IS NOT NULL");
                     AssertSql(
                         @"SELECT [f].[Id], [f].[String]
 FROM [Foos] AS [f]
-WHERE ([f].[String] = N'1337') AND [f].[String] IS NOT NULL");
+WHERE [f].[String] = N'1337'");
                 }
             }
         }
@@ -5956,7 +6102,7 @@ WHERE ([f].[String] = N'1337') AND [f].[String] IS NOT NULL");
 
 SELECT [f].[Id], [f].[String]
 FROM [Foos] AS [f]
-WHERE (([f].[String] = @__bar_Value_0) AND ([f].[String] IS NOT NULL AND @__bar_Value_0 IS NOT NULL)) OR ([f].[String] IS NULL AND @__bar_Value_0 IS NULL)");
+WHERE [f].[String] = @__bar_Value_0");
                 }
             }
         }
@@ -5977,7 +6123,7 @@ WHERE (([f].[String] = @__bar_Value_0) AND ([f].[String] IS NOT NULL AND @__bar_
 
 SELECT [f].[Id], [f].[String]
 FROM [Foos] AS [f]
-WHERE (([f].[String] = @__ToString_0) AND ([f].[String] IS NOT NULL AND @__ToString_0 IS NOT NULL)) OR ([f].[String] IS NULL AND @__ToString_0 IS NULL)");
+WHERE [f].[String] = @__ToString_0");
                 }
             }
         }
@@ -5998,7 +6144,7 @@ WHERE (([f].[String] = @__ToString_0) AND ([f].[String] IS NOT NULL AND @__ToStr
 
 SELECT [f].[Id], [f].[String]
 FROM [Foos] AS [f]
-WHERE (([f].[String] = @__p_0) AND ([f].[String] IS NOT NULL AND @__p_0 IS NOT NULL)) OR ([f].[String] IS NULL AND @__p_0 IS NULL)");
+WHERE [f].[String] = @__p_0");
                 }
             }
         }
@@ -6016,15 +6162,17 @@ WHERE (([f].[String] = @__p_0) AND ([f].[String] IS NOT NULL AND @__p_0 IS NOT N
                     AssertSql(
                         @"SELECT [f].[Id], [f].[String]
 FROM [Foos] AS [f]
-WHERE ([f].[String] = N'1337') AND [f].[String] IS NOT NULL");
+WHERE [f].[String] = N'1337'");
                 }
             }
         }
 
-        public class MyContext6864 : DbContext
+        private class MyContext6864 : DbContext
         {
             public DbSet<FooEntity6864> Foos { get; set; }
-            public MyContext6864(DbContextOptions options) : base(options)
+
+            public MyContext6864(DbContextOptions options)
+                : base(options)
             {
             }
         }
@@ -6039,13 +6187,13 @@ WHERE ([f].[String] = N'1337') AND [f].[String] IS NOT NULL");
                     ClearLog();
                 });
 
-        public class FooEntity6864
+        private class FooEntity6864
         {
             public int Id { get; set; }
             public string String { get; set; }
         }
 
-        public class Bar6864
+        private class Bar6864
         {
             private readonly int _value;
 
@@ -6058,7 +6206,6 @@ WHERE ([f].[String] = N'1337') AND [f].[String] IS NOT NULL");
             public override string ToString() => Value;
             public static implicit operator string(Bar6864 bar) => bar.Value;
             public Bar6864 Clone() => new Bar6864(_value);
-
         }
 
         #endregion
@@ -6083,9 +6230,10 @@ WHERE CHARINDEX('lla', [t].[Nombre]) > 0");
             }
         }
 
-        public class MyContext9582 : DbContext
+        private class MyContext9582 : DbContext
         {
-            public MyContext9582(DbContextOptions options) : base(options)
+            public MyContext9582(DbContextOptions options)
+                : base(options)
             {
             }
 
@@ -6118,9 +6266,8 @@ WHERE CHARINDEX('lla', [t].[Nombre]) > 0");
                     ClearLog();
                 });
 
-        public class TipoServicio9582
+        private class TipoServicio9582
         {
-
             public int Id { get; set; }
             public string Nombre { get; set; }
         }
@@ -6157,14 +6304,16 @@ FROM [Blogs] AS [b]");
             }
         }
 
-        public class MyContext7222 : DbContext
+        private class MyContext7222 : DbContext
         {
             public DbSet<Blog7222> Blogs { get; set; }
+
             public MyContext7222()
             {
             }
 
-            public MyContext7222(DbContextOptions options) : base(options)
+            public MyContext7222(DbContextOptions options)
+                : base(options)
             {
             }
 
@@ -6172,7 +6321,6 @@ FROM [Blogs] AS [b]");
             {
                 Blogs.Select(b => ClientMethod(b)).ToList();
             }
-
 
             public int ClientMethod(Blog7222 blog) => blog.Id;
         }
@@ -6187,7 +6335,7 @@ FROM [Blogs] AS [b]");
                     ClearLog();
                 });
 
-        public class Blog7222
+        private class Blog7222
         {
             public int Id { get; set; }
         }
@@ -6204,7 +6352,7 @@ FROM [Blogs] AS [b]");
                 using (var context = new MyContext17644(_options))
                 {
                     var personsToFind = await context.Persons.Where(p => p.Age >= 21)
-                        .Select(p => new PersonDetailView17644() { Name = p.Name, Age = p.Age })
+                        .Select(p => new PersonDetailView17644 { Name = p.Name, Age = p.Age })
                         .FirstAsync<PersonView17644>();
 
                     AssertSql(
@@ -6223,7 +6371,7 @@ WHERE [p].[Age] >= 21");
                 using (var context = new MyContext17644(_options))
                 {
                     var personsToFind = await context.Persons.Where(p => p.Age >= 21)
-                        .Select(p => new PersonDetailView17644() { Name = p.Name, Age = p.Age })
+                        .Select(p => new PersonDetailView17644 { Name = p.Name, Age = p.Age })
                         .FirstOrDefaultAsync<PersonView17644>();
 
                     AssertSql(
@@ -6242,7 +6390,7 @@ WHERE [p].[Age] >= 21");
                 using (var context = new MyContext17644(_options))
                 {
                     var personsToFind = await context.Persons.Where(p => p.Age >= 21)
-                        .Select(p => new PersonDetailView17644() { Name = p.Name, Age = p.Age })
+                        .Select(p => new PersonDetailView17644 { Name = p.Name, Age = p.Age })
                         .SingleAsync<PersonView17644>();
 
                     AssertSql(
@@ -6261,7 +6409,7 @@ WHERE [p].[Age] >= 21");
                 using (var context = new MyContext17644(_options))
                 {
                     var personsToFind = await context.Persons.Where(p => p.Age >= 21)
-                        .Select(p => new PersonDetailView17644() { Name = p.Name, Age = p.Age })
+                        .Select(p => new PersonDetailView17644 { Name = p.Name, Age = p.Age })
                         .SingleOrDefaultAsync<PersonView17644>();
 
                     AssertSql(
@@ -6272,7 +6420,6 @@ WHERE [p].[Age] >= 21");
             }
         }
 
-
         [ConditionalFact]
         public virtual async Task Return_type_of_Last_is_preserved()
         {
@@ -6282,7 +6429,7 @@ WHERE [p].[Age] >= 21");
                 {
                     var personsToFind = await context.Persons.Where(p => p.Age >= 21)
                         .OrderBy(p => p.Id)
-                        .Select(p => new PersonDetailView17644() { Name = p.Name, Age = p.Age })
+                        .Select(p => new PersonDetailView17644 { Name = p.Name, Age = p.Age })
                         .LastAsync<PersonView17644>();
 
                     AssertSql(
@@ -6303,7 +6450,7 @@ ORDER BY [p].[Id] DESC");
                 {
                     var personsToFind = await context.Persons.Where(p => p.Age >= 21)
                         .OrderBy(p => p.Id)
-                        .Select(p => new PersonDetailView17644() { Name = p.Name, Age = p.Age })
+                        .Select(p => new PersonDetailView17644 { Name = p.Name, Age = p.Age })
                         .LastOrDefaultAsync<PersonView17644>();
 
                     AssertSql(
@@ -6315,14 +6462,16 @@ ORDER BY [p].[Id] DESC");
             }
         }
 
-        public class MyContext17644 : DbContext
+        private class MyContext17644 : DbContext
         {
             public DbSet<Person17644> Persons { get; set; }
+
             public MyContext17644()
             {
             }
 
-            public MyContext17644(DbContextOptions options) : base(options)
+            public MyContext17644(DbContextOptions options)
+                : base(options)
             {
             }
         }
@@ -6339,19 +6488,19 @@ ORDER BY [p].[Id] DESC");
                     ClearLog();
                 });
 
-        public class Person17644
+        private class Person17644
         {
             public int Id { get; set; }
             public string Name { set; get; }
             public int Age { set; get; }
         }
 
-        public class PersonView17644
+        private class PersonView17644
         {
             public string Name { set; get; }
         }
 
-        public class PersonDetailView17644 : PersonView17644
+        private class PersonDetailView17644 : PersonView17644
         {
             public int Age { set; get; }
         }
@@ -6368,14 +6517,11 @@ ORDER BY [p].[Id] DESC");
                 using (var context = new MyContext11023(_options))
                 {
                     var query = await context.Entities
-                        .Select(e => new
-                        {
-                            ThingIds = e.Values.First().Things.Select(t => t.Subthing.ThingId).ToList()
-                        })
+                        .Select(e => new { ThingIds = e.Values.First().Things.Select(t => t.Subthing.ThingId).ToList() })
                         .ToListAsync();
 
                     var result = Assert.Single(query);
-                    Assert.Equal(new [] { 1, 2 }, result.ThingIds);
+                    Assert.Equal(new[] { 1, 2 }, result.ThingIds);
 
                     AssertSql(
                         @"SELECT [e].[Id], [t0].[ThingId], [t0].[Id]
@@ -6387,30 +6533,28 @@ OUTER APPLY (
     WHERE (
         SELECT TOP(1) [v].[Id]
         FROM [Values] AS [v]
-        WHERE ([e].[Id] = [v].[Entity11023Id]) AND [v].[Entity11023Id] IS NOT NULL) IS NOT NULL AND ((((
+        WHERE [e].[Id] = [v].[Entity11023Id]) IS NOT NULL AND (((
         SELECT TOP(1) [v0].[Id]
         FROM [Values] AS [v0]
-        WHERE ([e].[Id] = [v0].[Entity11023Id]) AND [v0].[Entity11023Id] IS NOT NULL) = [t].[Value11023Id]) AND ((
+        WHERE [e].[Id] = [v0].[Entity11023Id]) = [t].[Value11023Id]) OR ((
         SELECT TOP(1) [v0].[Id]
         FROM [Values] AS [v0]
-        WHERE ([e].[Id] = [v0].[Entity11023Id]) AND [v0].[Entity11023Id] IS NOT NULL) IS NOT NULL AND [t].[Value11023Id] IS NOT NULL)) OR ((
-        SELECT TOP(1) [v0].[Id]
-        FROM [Values] AS [v0]
-        WHERE ([e].[Id] = [v0].[Entity11023Id]) AND [v0].[Entity11023Id] IS NOT NULL) IS NULL AND [t].[Value11023Id] IS NULL))
+        WHERE [e].[Id] = [v0].[Entity11023Id]) IS NULL AND [t].[Value11023Id] IS NULL))
 ) AS [t0]
 ORDER BY [e].[Id], [t0].[Id]");
                 }
             }
         }
 
-        public class MyContext11023 : DbContext
+        private class MyContext11023 : DbContext
         {
             public DbSet<Entity11023> Entities { get; set; }
             public DbSet<Value11023> Values { get; set; }
             public DbSet<Thing11023> Things { get; set; }
             public DbSet<Subthing11023> Subthings { get; set; }
 
-            public MyContext11023(DbContextOptions options) : base(options)
+            public MyContext11023(DbContextOptions options)
+                : base(options)
             {
             }
         }
@@ -6420,51 +6564,46 @@ ORDER BY [e].[Id], [t0].[Id]");
                 () => new MyContext11023(_options),
                 context =>
                 {
-                    context.Add(new Entity11023
-                    {
-                        Values = new List<Value11023>
+                    context.Add(
+                        new Entity11023
                         {
-                            new Value11023
+                            Values = new List<Value11023>
                             {
-                                Things = new List<Thing11023>
+                                new Value11023
                                 {
-                                    new Thing11023
+                                    Things = new List<Thing11023>
                                     {
-                                        Subthing = new Subthing11023()
-                                    },
-                                    new Thing11023
-                                    {
-                                        Subthing = new Subthing11023()
+                                        new Thing11023 { Subthing = new Subthing11023() },
+                                        new Thing11023 { Subthing = new Subthing11023() }
                                     }
                                 }
                             }
-                        }
-                    });
+                        });
 
                     context.SaveChanges();
 
                     ClearLog();
                 });
 
-        public class Entity11023
+        private class Entity11023
         {
             public int Id { get; set; }
             public ICollection<Value11023> Values { get; set; }
         }
 
-        public class Value11023
+        private class Value11023
         {
             public int Id { get; set; }
             public ICollection<Thing11023> Things { get; set; }
         }
 
-        public class Thing11023
+        private class Thing11023
         {
             public int Id { get; set; }
             public Subthing11023 Subthing { get; set; }
         }
 
-        public class Subthing11023
+        private class Subthing11023
         {
             public int Id { get; set; }
             public int ThingId { get; set; }
@@ -6509,20 +6648,23 @@ CROSS JOIN (
             }
         }
 
-        public class MyContext7973 : DbContext
+        private class MyContext7973 : DbContext
         {
             public DbSet<User7973> Users { get; set; }
             public DbSet<Organisation7973> Organisations { get; set; }
 
-            public MyContext7973(DbContextOptions options) : base(options)
+            public MyContext7973(DbContextOptions options)
+                : base(options)
             {
             }
 
             protected override void OnModelCreating(ModelBuilder modelBuilder)
             {
                 modelBuilder.Entity<OrganisationUser7973>().HasKey(ou => new { ou.OrganisationId, ou.UserId });
-                modelBuilder.Entity<OrganisationUser7973>().HasOne(ou => ou.Organisation).WithMany(o => o.OrganisationUsers).HasForeignKey(ou => ou.OrganisationId);
-                modelBuilder.Entity<OrganisationUser7973>().HasOne(ou => ou.User).WithMany(u => u.OrganisationUsers).HasForeignKey(ou => ou.UserId);
+                modelBuilder.Entity<OrganisationUser7973>().HasOne(ou => ou.Organisation).WithMany(o => o.OrganisationUsers)
+                    .HasForeignKey(ou => ou.OrganisationId);
+                modelBuilder.Entity<OrganisationUser7973>().HasOne(ou => ou.User).WithMany(u => u.OrganisationUsers)
+                    .HasForeignKey(ou => ou.UserId);
             }
         }
 
@@ -6532,11 +6674,7 @@ CROSS JOIN (
                 context =>
                 {
                     context.AddRange(
-                        new OrganisationUser7973
-                        {
-                            Organisation = new Organisation7973(),
-                            User = new User7973()
-                        },
+                        new OrganisationUser7973 { Organisation = new Organisation7973(), User = new User7973() },
                         new Organisation7973(),
                         new User7973());
 
@@ -6544,19 +6682,19 @@ CROSS JOIN (
                     ClearLog();
                 });
 
-        public class User7973
+        private class User7973
         {
             public int Id { get; set; }
             public List<OrganisationUser7973> OrganisationUsers { get; set; }
         }
 
-        public class Organisation7973
+        private class Organisation7973
         {
             public int Id { get; set; }
             public List<OrganisationUser7973> OrganisationUsers { get; set; }
         }
 
-        public class OrganisationUser7973
+        private class OrganisationUser7973
         {
             public int OrganisationId { get; set; }
             public Organisation7973 Organisation { get; set; }
@@ -6583,7 +6721,8 @@ CROSS JOIN (
                         query.ToList();
                     }
 
-                    Assert.Collection(query,
+                    Assert.Collection(
+                        query,
                         b => Assert.Equal(3, b.Posts.Count),
                         b => Assert.Equal(2, b.Posts.Count),
                         b => Assert.Single(b.Posts));
@@ -6591,11 +6730,12 @@ CROSS JOIN (
             }
         }
 
-        public class MyContext10447 : DbContext
+        private class MyContext10447 : DbContext
         {
             public DbSet<Blog10447> Blogs { get; set; }
 
-            public MyContext10447(DbContextOptions options) : base(options)
+            public MyContext10447(DbContextOptions options)
+                : base(options)
             {
             }
 
@@ -6616,40 +6756,651 @@ CROSS JOIN (
                             {
                                 new Post10447(),
                                 new Post10447(),
-                                new Post10447(),
+                                new Post10447()
                             }
                         },
-                        new Blog10447
-                        {
-                            Posts = new List<Post10447>
-                            {
-                                new Post10447(),
-                                new Post10447(),
-                            }
-                        },
-                        new Blog10447
-                        {
-                            Posts = new List<Post10447>
-                            {
-                                new Post10447(),
-                            }
-                        });
+                        new Blog10447 { Posts = new List<Post10447> { new Post10447(), new Post10447() } },
+                        new Blog10447 { Posts = new List<Post10447> { new Post10447() } });
 
                     context.SaveChanges();
                     ClearLog();
                 });
 
-        public class Blog10447
+        private class Blog10447
         {
             public int Id { get; set; }
             public List<Post10447> Posts { get; set; }
         }
 
-        public class Post10447
+        private class Post10447
         {
             public int Id { get; set; }
 
             public Blog10447 Blog { get; set; }
+        }
+
+        #endregion
+
+        #region Issue12456
+
+        [ConditionalFact]
+        public virtual void Let_multiple_references_with_reference_to_outer()
+        {
+            using (CreateDatabase12456())
+            {
+                using (var context = new MyContext12456(_options))
+                {
+                    var users = (from a in context.Activities
+                                 let cs = context.CompetitionSeasons
+                                     .First(s => s.StartDate <= a.DateTime && a.DateTime < s.EndDate)
+                                 select new { cs.Id, Points = a.ActivityType.Points.Where(p => p.CompetitionSeason == cs) }).ToList();
+
+                    AssertSql(
+                        @"SELECT (
+    SELECT TOP(1) [c].[Id]
+    FROM [CompetitionSeasons] AS [c]
+    WHERE ([c].[StartDate] <= [a].[DateTime]) AND ([a].[DateTime] < [c].[EndDate])), [a].[Id], [a0].[Id], [t].[Id], [t].[ActivityTypeId], [t].[CompetitionSeasonId], [t].[Points], [t].[Id0]
+FROM [Activities] AS [a]
+INNER JOIN [ActivityType12456] AS [a0] ON [a].[ActivityTypeId] = [a0].[Id]
+OUTER APPLY (
+    SELECT [a1].[Id], [a1].[ActivityTypeId], [a1].[CompetitionSeasonId], [a1].[Points], [c0].[Id] AS [Id0]
+    FROM [ActivityTypePoints12456] AS [a1]
+    INNER JOIN [CompetitionSeasons] AS [c0] ON [a1].[CompetitionSeasonId] = [c0].[Id]
+    WHERE ([c0].[Id] = (
+        SELECT TOP(1) [c1].[Id]
+        FROM [CompetitionSeasons] AS [c1]
+        WHERE ([c1].[StartDate] <= [a].[DateTime]) AND ([a].[DateTime] < [c1].[EndDate]))) AND ([a0].[Id] = [a1].[ActivityTypeId])
+) AS [t]
+ORDER BY [a].[Id], [a0].[Id], [t].[Id], [t].[Id0]");
+                }
+            }
+        }
+
+        [ConditionalFact]
+        public virtual void Let_multiple_references_with_reference_to_outer_2()
+        {
+            using (CreateDatabase12456())
+            {
+                using (var context = new MyContext12456(_options))
+                {
+                    var users = context.Activities
+                        .Select(
+                            a => new
+                            {
+                                Activity = a,
+                                CompetitionSeason = context.CompetitionSeasons
+                                    .First(s => s.StartDate <= a.DateTime && a.DateTime < s.EndDate)
+                            })
+                        .Select(
+                            a => new
+                            {
+                                a.Activity,
+                                CompetitionSeasonId = a.CompetitionSeason.Id,
+                                Points = a.Activity.Points
+                                    ?? a.Activity.ActivityType.Points
+                                        .Where(p => p.CompetitionSeason == a.CompetitionSeason)
+                                        .Select(p => p.Points).SingleOrDefault()
+                            }).ToList();
+
+                    AssertSql(
+                        @"SELECT [a0].[Id], [a0].[ActivityTypeId], [a0].[DateTime], [a0].[Points], (
+    SELECT TOP(1) [c].[Id]
+    FROM [CompetitionSeasons] AS [c]
+    WHERE ([c].[StartDate] <= [a0].[DateTime]) AND ([a0].[DateTime] < [c].[EndDate])) AS [CompetitionSeasonId], COALESCE([a0].[Points], (
+    SELECT TOP(1) [a].[Points]
+    FROM [ActivityTypePoints12456] AS [a]
+    INNER JOIN [CompetitionSeasons] AS [c0] ON [a].[CompetitionSeasonId] = [c0].[Id]
+    WHERE ([a1].[Id] = [a].[ActivityTypeId]) AND ([c0].[Id] = (
+        SELECT TOP(1) [c1].[Id]
+        FROM [CompetitionSeasons] AS [c1]
+        WHERE ([c1].[StartDate] <= [a0].[DateTime]) AND ([a0].[DateTime] < [c1].[EndDate]))))) AS [Points]
+FROM [Activities] AS [a0]
+INNER JOIN [ActivityType12456] AS [a1] ON [a0].[ActivityTypeId] = [a1].[Id]");
+                }
+            }
+        }
+
+        private class MyContext12456 : DbContext
+        {
+            public DbSet<Activity12456> Activities { get; set; }
+            public DbSet<CompetitionSeason12456> CompetitionSeasons { get; set; }
+
+            public MyContext12456(DbContextOptions options)
+                : base(options)
+            {
+            }
+        }
+
+        private SqlServerTestStore CreateDatabase12456()
+            => CreateTestStore(
+                () => new MyContext12456(_options),
+                context =>
+                {
+                    ClearLog();
+                });
+
+        private class CompetitionSeason12456
+        {
+            public int Id { get; set; }
+            public DateTime StartDate { get; set; }
+            public DateTime EndDate { get; set; }
+            public List<ActivityTypePoints12456> ActivityTypePoints { get; set; }
+        }
+
+        private class Point12456
+        {
+            public int Id { get; set; }
+            public CompetitionSeason12456 CompetitionSeason { get; set; }
+            public int? Points { get; set; }
+        }
+
+        private class ActivityType12456
+        {
+            public int Id { get; set; }
+            public List<ActivityTypePoints12456> Points { get; set; }
+        }
+
+        private class ActivityTypePoints12456
+        {
+            public int Id { get; set; }
+            public int ActivityTypeId { get; set; }
+            public int CompetitionSeasonId { get; set; }
+            public int Points { get; set; }
+
+            public ActivityType12456 ActivityType { get; set; }
+            public CompetitionSeason12456 CompetitionSeason { get; set; }
+        }
+
+        private class Activity12456
+        {
+            public int Id { get; set; }
+            public int ActivityTypeId { get; set; }
+            public DateTime DateTime { get; set; }
+            public int? Points { get; set; }
+            public ActivityType12456 ActivityType { get; set; }
+        }
+
+        #endregion
+
+        #region Issue15137
+
+        [ConditionalFact]
+        public virtual async Task Run_something()
+        {
+            using (CreateDatabase15137())
+            {
+                using (var context = new MyContext15137(_options))
+                {
+                    var container = await context.Trades
+                        .Select(
+                            x => new
+                            {
+                                x.Id,
+                                Assets = x.Assets.AsQueryable()
+                                    .Select(
+                                        y => new
+                                        {
+                                            y.Id,
+                                            Contract = new
+                                            {
+                                                y.Contract.Id,
+                                                Season = new
+                                                {
+                                                    y.Contract.Season.Id,
+                                                    IsPastTradeDeadline =
+                                                        (y.Contract.Season.Games.Max(z => (int?)z.GameNumber) ?? 0) > 10
+                                                }
+                                            }
+                                        })
+                                    .ToList()
+                            })
+                        .SingleAsync();
+
+                    AssertSql(
+                        @"SELECT [t0].[Id], [t1].[Id], [t1].[Id0], [t1].[Id1], [t1].[c]
+FROM (
+    SELECT TOP(2) [t].[Id]
+    FROM [Trades] AS [t]
+) AS [t0]
+LEFT JOIN (
+    SELECT [d0].[Id], [d1].[Id] AS [Id0], [d2].[Id] AS [Id1], CASE
+        WHEN COALESCE((
+            SELECT MAX([d].[GameNumber])
+            FROM [DbGame] AS [d]
+            WHERE [d2].[Id] IS NOT NULL AND ([d2].[Id] = [d].[SeasonId])), 0) > 10 THEN CAST(1 AS bit)
+        ELSE CAST(0 AS bit)
+    END AS [c], [d0].[DbTradeId]
+    FROM [DbTradeAsset] AS [d0]
+    INNER JOIN [DbContract] AS [d1] ON [d0].[ContractId] = [d1].[Id]
+    LEFT JOIN [DbSeason] AS [d2] ON [d1].[SeasonId] = [d2].[Id]
+) AS [t1] ON [t0].[Id] = [t1].[DbTradeId]
+ORDER BY [t0].[Id], [t1].[Id], [t1].[Id0]");
+                }
+            }
+        }
+
+        private class MyContext15137 : DbContext
+        {
+            public DbSet<DbTrade> Trades { get; set; }
+
+            public MyContext15137(DbContextOptions options)
+                : base(options)
+            {
+            }
+        }
+
+        private SqlServerTestStore CreateDatabase15137()
+            => CreateTestStore(
+                () => new MyContext15137(_options),
+                context =>
+                {
+                    var dbTrade = new DbTrade
+                    {
+                        Assets = new List<DbTradeAsset>
+                        {
+                            new DbTradeAsset
+                            {
+                                Contract = new DbContract
+                                {
+                                    Season = new DbSeason { Games = new List<DbGame> { new DbGame { GameNumber = 1 } } }
+                                }
+                            }
+                        }
+                    };
+
+                    context.Trades.Add(dbTrade);
+                    context.SaveChanges();
+
+                    ClearLog();
+                });
+
+        private class DbTrade
+        {
+            public int Id { get; set; }
+            public List<DbTradeAsset> Assets { get; set; }
+        }
+
+        private class DbTradeAsset
+        {
+            public int Id { get; set; }
+            public int ContractId { get; set; }
+
+            public DbContract Contract { get; set; }
+        }
+
+        private class DbContract
+        {
+            public int Id { get; set; }
+
+            public DbSeason Season { get; set; }
+        }
+
+        private class DbSeason
+        {
+            public int Id { get; set; }
+
+            public List<DbGame> Games { get; set; }
+        }
+
+        private class DbGame
+        {
+            public int Id { get; set; }
+            public int GameNumber { get; set; }
+
+            public DbSeason Season { get; set; }
+        }
+
+        #endregion
+
+        #region Issue13517
+
+        [ConditionalFact]
+        public void Query_filter_with_pk_fk_optimization_bug_13517()
+        {
+            using var _ = CreateDatabase13517();
+            using var context = new BugContext13517(_options);
+
+            context.Entities.Select(
+                s =>
+                    new BugEntityDto13517
+                    {
+                        Id = s.Id,
+                        RefEntity = s.RefEntity == null
+                            ? null
+                            : new BugRefEntityDto13517 { Id = s.RefEntity.Id, Public = s.RefEntity.Public },
+                        RefEntityId = s.RefEntityId
+                    }).Single(p => p.Id == 1);
+
+            AssertSql(
+                @"SELECT TOP(2) [e].[Id], CASE
+    WHEN [t].[Id] IS NULL THEN CAST(1 AS bit)
+    ELSE CAST(0 AS bit)
+END, [t].[Id], [t].[Public], [e].[RefEntityId]
+FROM [Entities] AS [e]
+LEFT JOIN (
+    SELECT [r].[Id], [r].[Public]
+    FROM [RefEntities] AS [r]
+    WHERE [r].[Public] = CAST(1 AS bit)
+) AS [t] ON [e].[RefEntityId] = [t].[Id]
+WHERE [e].[Id] = 1");
+        }
+
+        private SqlServerTestStore CreateDatabase13517()
+            => CreateTestStore(
+                () => new BugContext13517(_options),
+                context =>
+                {
+                    var refEntity = new BugRefEntity13517 { Public = false };
+                    context.RefEntities.Add(refEntity);
+                    context.Entities.Add(new BugEntity13517 { RefEntity = refEntity });
+                    context.SaveChanges();
+
+                    ClearLog();
+                });
+
+        private class BugEntity13517
+        {
+            public int Id { get; set; }
+            public int? RefEntityId { get; set; }
+            public BugRefEntity13517 RefEntity { get; set; }
+        }
+
+        private class BugRefEntity13517
+        {
+            public int Id { get; set; }
+            public bool Public { get; set; }
+        }
+
+        private class BugEntityDto13517
+        {
+            public int Id { get; set; }
+            public int? RefEntityId { get; set; }
+            public BugRefEntityDto13517 RefEntity { get; set; }
+        }
+
+        private class BugRefEntityDto13517
+        {
+            public int Id { get; set; }
+            public bool Public { get; set; }
+        }
+
+        private class BugContext13517 : DbContext
+        {
+            public DbSet<BugEntity13517> Entities { get; set; }
+            public DbSet<BugRefEntity13517> RefEntities { get; set; }
+
+            protected override void OnModelCreating(ModelBuilder modelBuilder)
+            {
+                modelBuilder.Entity<BugRefEntity13517>().HasQueryFilter(f => f.Public);
+            }
+
+            public BugContext13517(DbContextOptions options)
+                : base(options)
+            {
+            }
+        }
+
+        #endregion
+
+        #region Issue17794
+
+        [ConditionalFact]
+        public void Double_convert_interface_created_expression_tree()
+        {
+            using var _ = CreateDatabase17794();
+            using var context = new BugContext17794(_options);
+
+            var expression = HasAction17794<Offer17794>(OfferActions17794.Accepted);
+            var query = context.Offers.Where(expression).Count();
+
+            Assert.Equal(1, query);
+
+            AssertSql(
+                @"@__action_0='1'
+
+SELECT COUNT(*)
+FROM [Offers] AS [o]
+WHERE EXISTS (
+    SELECT 1
+    FROM [OfferActions] AS [o0]
+    WHERE ([o].[Id] = [o0].[OfferId]) AND ([o0].[Action] = @__action_0))");
+        }
+
+        private SqlServerTestStore CreateDatabase17794()
+            => CreateTestStore(
+                () => new BugContext17794(_options),
+                context =>
+                {
+                    context.Add(new Offer17794
+                    {
+                        Actions = new List<OfferAction17794>
+                        {
+                            new OfferAction17794
+                            {
+                                Action = OfferActions17794.Accepted
+                            }
+                        }
+                    });
+
+                    context.SaveChanges();
+
+                    ClearLog();
+                });
+
+        private static Expression<Func<T, bool>> HasAction17794<T>(OfferActions17794 action)
+            where T : IOffer17794
+        {
+            Expression<Func<OfferAction17794, bool>> predicate = oa => oa.Action == action;
+
+            return v => v.Actions.AsQueryable().Any(predicate);
+        }
+
+        private interface IOffer17794
+        {
+            ICollection<OfferAction17794> Actions { get; set; }
+        }
+
+        private class Offer17794 : IOffer17794
+        {
+            public int Id { get; set; }
+
+            public ICollection<OfferAction17794> Actions { get; set; }
+        }
+
+        private enum OfferActions17794 : int
+        {
+            Accepted = 1,
+            Declined = 2
+        }
+
+        private class OfferAction17794
+        {
+            public int Id { get; set; }
+
+            [Required]
+            public Offer17794 Offer { get; set; }
+            public int OfferId { get; set; }
+
+            [Required]
+            public OfferActions17794 Action { get; set; }
+        }
+
+        private class BugContext17794 : DbContext
+        {
+            public DbSet<Offer17794> Offers { get; set; }
+            public DbSet<OfferAction17794> OfferActions { get; set; }
+
+            protected override void OnModelCreating(ModelBuilder modelBuilder)
+            {
+
+            }
+
+            public BugContext17794(DbContextOptions options)
+                : base(options)
+            {
+            }
+        }
+
+        #endregion
+
+        #region Issue18087
+
+        [ConditionalFact]
+        public void Cast_to_implemented_interface_is_removed_from_expression_tree()
+        {
+            using var _ = CreateDatabase18087();
+            using var context = new BugContext18087(_options);
+
+            var queryBase = (IQueryable)context.MockEntities;
+            var id = 1;
+            var query = queryBase.Cast<IDomainEntity>().FirstOrDefault(x => x.Id == id);
+
+            Assert.Equal(1, query.Id);
+
+            AssertSql(
+                @"@__id_0='1'
+
+SELECT TOP(1) [m].[Id], [m].[Name], [m].[NavigationEntityId]
+FROM [MockEntities] AS [m]
+WHERE [m].[Id] = @__id_0");
+        }
+
+        [ConditionalFact]
+        public void Cast_to_object_is_removed_from_expression_tree()
+        {
+            using var _ = CreateDatabase18087();
+            using var context = new BugContext18087(_options);
+
+            var queryBase = (IQueryable)context.MockEntities;
+            var query = queryBase.Cast<object>().Count();
+
+            Assert.Equal(3, query);
+
+            AssertSql(
+                @"SELECT COUNT(*)
+FROM [MockEntities] AS [m]");
+        }
+
+        [ConditionalFact]
+        public void Cast_to_non_implemented_interface_is_not_removed_from_expression_tree()
+        {
+            using var _ = CreateDatabase18087();
+            using var context = new BugContext18087(_options);
+
+            var queryBase = (IQueryable)context.MockEntities;
+            var id = 1;
+
+            var message = Assert.Throws<InvalidOperationException>(
+                () => queryBase.Cast<IDummyEntity>().FirstOrDefault(x => x.Id == id)).Message;
+
+            Assert.Equal(
+                CoreStrings.TranslationFailed(@"DbSet<MockEntity>    .Cast()    .Where(e => e.Id == __id_0)"),
+                message.Replace("\r", "").Replace("\n", ""));
+        }
+
+        private SqlServerTestStore CreateDatabase18087()
+            => CreateTestStore(
+                () => new BugContext18087(_options),
+                context =>
+                {
+                    context.AddRange(new MockEntity()
+                    {
+                        Name = "Entity1",
+                        NavigationEntity = null
+                    },
+                    new MockEntity()
+                    {
+                        Name = "Entity2",
+                        NavigationEntity = null
+                    },
+                    new MockEntity()
+                    {
+                        Name = "NewEntity",
+                        NavigationEntity = null
+                    });
+
+                    context.SaveChanges();
+
+                    ClearLog();
+                });
+
+        private interface IDomainEntity
+        {
+            int Id { get; set; }
+        }
+
+        private interface IDummyEntity
+        {
+            int Id { get; set; }
+        }
+
+        private class MockEntity : IDomainEntity
+        {
+            public int Id { get; set; }
+            public string Name { get; set; }
+
+            public MockEntity NavigationEntity { get; set; }
+        }
+
+        private class BugContext18087 : DbContext
+        {
+            public BugContext18087(DbContextOptions options)
+                : base(options)
+            {
+            }
+
+            public DbSet<MockEntity> MockEntities { get; set; }
+        }
+
+        #endregion
+
+        #region Issue18759
+
+        [ConditionalFact]
+        public void Query_filter_with_null_constant()
+        {
+            using var _ = CreateDatabase18759();
+            using var context = new BugContext18759(_options);
+
+            var people = context.People.ToList();
+
+            AssertSql(
+                @"SELECT [p].[Id], [p].[UserDeleteId]
+FROM [People] AS [p]
+LEFT JOIN [User18759] AS [u] ON [p].[UserDeleteId] = [u].[Id]
+WHERE [u].[Id] IS NOT NULL");
+        }
+
+        private SqlServerTestStore CreateDatabase18759()
+            => CreateTestStore(
+                () => new BugContext18759(_options),
+                context =>
+                {
+                    ClearLog();
+                });
+
+        private class Person18759
+        {
+            public int Id { get; set; }
+            public User18759 UserDelete { get; set; }
+        }
+
+        private class User18759
+        {
+            public int Id { get; set; }
+        }
+
+        private class BugContext18759 : DbContext
+        {
+            public DbSet<Person18759> People { get; set; }
+
+            protected override void OnModelCreating(ModelBuilder modelBuilder)
+                => modelBuilder.Entity<Person18759>().HasQueryFilter(p => p.UserDelete != null);
+
+            public BugContext18759(DbContextOptions options)
+                : base(options)
+            {
+            }
         }
 
         #endregion
